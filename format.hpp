@@ -25,9 +25,11 @@
 			+ 2019/12/03 21:54- インクルードファイルの修追加。@n
 			+ 2019/12/09 03:21- memory_chaout で出力先が設定されていない場合の安全性確保。@n
 			! 2019/12/14 11:44- 符号の表示不具合修正。@n
-			+ 2020/01/02 11:05- ポインター表示機能「%p」追加
+			+ 2020/01/02 11:05- ポインター表示機能「%p」追加。 @n
+			+ 2020/02/02 15:43- enum error など共有定義の継承。 @n
+			! 2019/02/02 19:42- 符号文字カウントの不具合修正。
     @author 平松邦仁 (hira@rvf-rc45.net)
-	@copyright	Copyright (C) 2013, 2019 Kunihito Hiramatsu @n
+	@copyright	Copyright (C) 2013, 2020 Kunihito Hiramatsu @n
 				Released under the MIT license @n
 				https://github.com/hirakuni45/RX/blob/master/LICENSE
 */
@@ -786,7 +788,7 @@ namespace utils {
 				chaout_(e);
 				zerosupp_ = true;
 				sign_ = true;
-				num_ = 2;
+				num_ = 3;
 				out_dec_(dexp);
 			}
 		}

@@ -39,21 +39,22 @@ namespace {
 	{
 		switch(errc) {
 		case utils::format::error::null:
-			std::cout << "Error: null ptr.";
+			std::cout << "  Error: null ptr.";
 			break;
 		case utils::format::error::unknown:
-			std::cout << "Error: unknown type.";
+			std::cout << "  Error: unknown type.";
 			break;
 		case utils::format::error::different:
-			std::cout << "Error: different type.";
+			std::cout << "  Error: different type.";
 			break;
 		case utils::format::error::over:
-			std::cout << "Error: over range.";
+			std::cout << "  Error: over range.";
 			break;
 		default:
-			std::cout << "Error: (" << static_cast<int>(errc) << ") other error.";
+			std::cout << "  Error: (" << static_cast<int>(errc) << ") other error.";
 			break;
 		}
+		std::cout << std::endl;
 	}
 
 
@@ -220,7 +221,7 @@ int main(int argc, char* argv[])
 	{  // Test06: %f の 数値をデコードする検査
 		float a = 1.00625f;
 		static const char* form[] = {
-			"form=%f", "form=%7.6f", "form=%07.6f", "form=%5.4f", "form=%05.4f"
+			"form=%f", "form=%7.6f", "form=%07.6f", "form=%5.4f", "form=%05.4f",
 		};
 
 		int sub = 0;
@@ -246,14 +247,67 @@ int main(int argc, char* argv[])
 	}
 
 
+	{  // Test07: %e の 数値をデコードする検査
+		float a[] = { 102500.125f, 0.0000000325f, -107500.125f, -0.0000000625f };
+		static const char* form[] = {
+			"form=%e", "form=%7.6e", "form=%07.6e", "form=%5.4e", "form=%05.4e",
+		};
+
+		int sub = 0;
+		for(int i = 0; i < 20; ++i) {
+			char ref[64];
+			sprintf(ref, form[i >> 2], a[i & 3]);
+			char res[64];
+			auto err = (sformat(form[i >> 2], res, sizeof(res)) % a[i & 3]).get_error();
+			std::cout << "Test07(" << i << "), floating point (exponent) check.";
+			list_result_(ref, res);
+			if(strcmp(ref, res) == 0) {
+				std::cout << "  Pass." << std::endl;
+				++sub;
+			} else {
+				list_error_(err);
+			}
+		}
+		if(sub == 10) {
+			++pass;
+		}
+		++total;
+	}
 
 
+	{  // Test09: %s の 文字列をデコードする検査
+		static const char* inp = {
+			"AbcdEFG"
+		};
+		static const char* form[] = {
+			"%s", "%10s", "%09s", "%6s", "%07s"
+		};
+
+		int sub = 0;
+		for(int i = 0; i < 5; ++i) {
+			char ref[64];
+			sprintf(ref, form[i], inp);
+			char res[64];
+			auto err = (sformat(form[i], res, sizeof(res)) % inp).get_error();
+			std::cout << "Test09(" << i << "), text check.";
+			list_result_(ref, res);
+			if(strcmp(ref, res) == 0) {
+				std::cout << "  Pass." << std::endl;
+				++sub;
+			} else {
+				list_error_(err);
+			}
+		}
+		if(sub == 5) {
+			++pass;
+		}
+		++total;
+	}
 
 
-
-	{  // Test07: フォーマットに nullptr を与える。
+	{  // Test10: フォーマットに nullptr を与えた場合のエラー検査。
 		auto err = (utils::format(nullptr)).get_error();
-		std::cout << "Test07, format poniter to nullptr, error code: ("
+		std::cout << "Test10, format poniter to nullptr, error code: ("
 			<< static_cast<int>(err) << ")";
 		if(err == format::error::null) {
 			std::cout << "  Pass." << std::endl;
@@ -265,16 +319,25 @@ int main(int argc, char* argv[])
 	}
 
 
+	{  // Test11: 型が異なる場合のエラー検査。
+		float a = 0.0f;
+		auto err = (utils::format("%d") % a).get_error();
+		std::cout << "Test11, different type, error code: ("
+			<< static_cast<int>(err) << ")";
+		if(err == format::error::different) {
+			std::cout << "  Pass." << std::endl;
+			++pass;
+		} else {
+			std::cout << "  Error." << std::endl;
+		}
+		++total;
+	}
+
+
+
 
 
 #if 0
-	{
-		utils::format("test for 'different type (int to float)':\n  ");
-		float a = 1.0f;
-		auto errcode = (utils::format("int: %d\n") % a).get_error();
-		list_error_(errcode);
-	}
-
 	{
 		utils::format("test for 'floating point auto(%%g) format':\n");
 		float a = 1210.05f;
