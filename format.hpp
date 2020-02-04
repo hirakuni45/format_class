@@ -27,7 +27,8 @@
 			! 2019/12/14 11:44- 符号の表示不具合修正。@n
 			+ 2020/01/02 11:05- ポインター表示機能「%p」追加。 @n
 			+ 2020/02/02 15:43- enum error など共有定義の継承。 @n
-			! 2019/02/02 19:42- 符号文字カウントの不具合修正。
+			! 2019/02/02 19:42- 符号文字カウントの不具合修正。@n
+			+ 2020/02/04 05:23- std::string 型追加。
     @author 平松邦仁 (hira@rvf-rc45.net)
 	@copyright	Copyright (C) 2013, 2020 Kunihito Hiramatsu @n
 				Released under the MIT license @n
@@ -38,6 +39,7 @@
 #include <unistd.h>
 #include <cstdint>
 #include <cstring>
+#include <string>
 
 // 最終的な出力として putchar を使う場合有効にする（通常は write [stdout] 関数）
 // #define USE_PUTCHAR
@@ -516,7 +518,7 @@ namespace utils {
 					} else if(ch == 'G') {
 						mode_ = mode::REAL_AUTO_CAPS;
 						return;
-					} else if(ch == 'p' || ch == 'P') {
+					} else if(ch == 'p') {
 						mode_ = mode::POINTER;
 						return;
 					} else if(ch == '%') {
@@ -817,11 +819,11 @@ namespace utils {
 			if(sizeof(val) > 4) {
 				zerosupp_ = true;
 				num_ = 8;
-				out_hex_(v >> 32, 'A');
+				out_hex_(v >> 32, 'a');
 			}
 			zerosupp_ = true;
 			num_ = 8;
-			out_hex_(v, 'A');
+			out_hex_(v, 'a');
 		}
 
 	public:
@@ -906,6 +908,31 @@ namespace utils {
 
 		//-----------------------------------------------------------------//
 		/*!
+			@brief  オペレーター「%」(const std::string&)
+			@param[in]	val	値
+			@return	自分の参照
+		*/
+		//-----------------------------------------------------------------//
+		basic_format& operator % (const std::string& val) noexcept
+		{
+			if(error_ != error::none) {
+				return *this;
+			}
+
+			if(mode_ == mode::STR) {
+				str_sub_(val.c_str());
+			} else {
+				error_ = error::unknown;
+			}
+
+			reset_();
+			next_();
+			return *this;
+		}
+
+
+		//-----------------------------------------------------------------//
+		/*!
 			@brief  オペレーター「%」(const char*)
 			@param[in]	val	値
 			@return	自分の参照
@@ -948,6 +975,57 @@ namespace utils {
 				str_sub_(val);
 			} else if(mode_ == mode::POINTER) {
 				pointer_(static_cast<const void*>(val));
+			} else {
+				error_ = error::unknown;
+			}
+
+			reset_();
+			next_();
+			return *this;
+		}
+
+
+		//-----------------------------------------------------------------//
+		/*!
+			@brief  オペレーター「%」(std::string&)
+			@param[in]	val	値
+			@return	自分の参照
+		*/
+		//-----------------------------------------------------------------//
+		basic_format& operator % (std::string& val) noexcept
+		{
+			if(error_ != error::none) {
+				return *this;
+			}
+
+			if(mode_ == mode::STR) {
+				str_sub_(val.c_str());
+			} else {
+				error_ = error::unknown;
+			}
+
+			reset_();
+			next_();
+			return *this;
+		}
+
+
+		//-----------------------------------------------------------------//
+		/*!
+			@brief  オペレーター「%」
+			@param[in]	ptr	ポインター型
+			@return	自分の参照
+		*/
+		//-----------------------------------------------------------------//
+		template <typename T>
+		basic_format& operator % (T* ptr) noexcept
+		{
+			if(error_ != error::none) {
+				return *this;
+			}
+
+			if(mode_ == mode::POINTER) {
+				pointer_(static_cast<const void*>(ptr));
 			} else {
 				error_ = error::unknown;
 			}

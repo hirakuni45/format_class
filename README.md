@@ -77,11 +77,35 @@ printf に似た仕様で文字列から数値へ変換する C++ クラス
 
 ### サンプル
 
+・標準出力に「a」の内容を表示する。
+```
+    int a = 1000;
+    utils::format("%d\n") % a;
+```
 
+・文字列「res」に「a」の内容を出力する。
+```
+    int a = 1000;
+    char res[64];
+    utils::sformat("%d\n", res, sizeof(res)) % a;
+```
 
+・変換過程でのエラーを検査する。
+```
+    int a = 1000;
+    auto err = (utils::format("%d\n") % a).get_error();
+    if(err == utils::error::none) {
+        // OK!
+    } else {
+        // NG!
+    }
+```
 
-
-
+・出力文字サイズのみを取得
+```
+    int a = 1000;
+    auto size = (utils::size_format("%d\n") % a).size();
+```
 
 ---
 ## プロジェクト（全体テスト）

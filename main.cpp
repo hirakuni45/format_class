@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/format.hpp>
+#include <limits>
 
 #include "format.hpp"
 
@@ -60,7 +61,7 @@ namespace {
 
 	void list_result_(const std::string& ref, const std::string& res)
 	{
-		std::cout << "Ref: '" << ref << "' <-> '" << res << "'";
+		std::cout << " Ref: '" << ref << "' <-> Res: '" << res << "'";
 	} 
 
 }
@@ -268,19 +269,19 @@ int main(int argc, char* argv[])
 				list_error_(err);
 			}
 		}
-		if(sub == 10) {
+		if(sub == 20) {
 			++pass;
 		}
 		++total;
 	}
 
 
-	{  // Test09: %s の 文字列をデコードする検査
+	{  // Test08: %s の 文字列をデコードする検査
 		static const char* inp = {
 			"AbcdEFG"
 		};
 		static const char* form[] = {
-			"%s", "%10s", "%09s", "%6s", "%07s"
+			"%s", "%10s", "%09s", "%6s", "%05s"
 		};
 
 		int sub = 0;
@@ -289,7 +290,7 @@ int main(int argc, char* argv[])
 			sprintf(ref, form[i], inp);
 			char res[64];
 			auto err = (sformat(form[i], res, sizeof(res)) % inp).get_error();
-			std::cout << "Test09(" << i << "), text check.";
+			std::cout << "Test08(" << i << "), text check.";
 			list_result_(ref, res);
 			if(strcmp(ref, res) == 0) {
 				std::cout << "  Pass." << std::endl;
@@ -305,9 +306,9 @@ int main(int argc, char* argv[])
 	}
 
 
-	{  // Test10: フォーマットに nullptr を与えた場合のエラー検査。
+	{  // Test09: フォーマットに nullptr を与えた場合のエラー検査。
 		auto err = (utils::format(nullptr)).get_error();
-		std::cout << "Test10, format poniter to nullptr, error code: ("
+		std::cout << "Test09, format poniter to nullptr, error code: ("
 			<< static_cast<int>(err) << ")";
 		if(err == format::error::null) {
 			std::cout << "  Pass." << std::endl;
@@ -319,12 +320,40 @@ int main(int argc, char* argv[])
 	}
 
 
-	{  // Test11: 型が異なる場合のエラー検査。
+	{  // Test10: 型が異なる場合のエラー検査。
 		float a = 0.0f;
-		auto err = (utils::format("%d") % a).get_error();
-		std::cout << "Test11, different type, error code: ("
-			<< static_cast<int>(err) << ")";
-		if(err == format::error::different) {
+		static const char* form[] = { "%s", "%d", "%c", "%u", "%p" };
+		int sub = 0;
+		for(int i = 0; i < 5; ++i) {
+			char res[64];
+			auto err = (utils::sformat(form[i], res, sizeof(res)) % a).get_error();
+			std::cout << "Test10, different type, error code: ("
+				<< static_cast<int>(err) << ") '" << form[i] << "' (target float)";
+			if(err == format::error::different) {
+				std::cout << "  Pass." << std::endl;
+				++sub;
+			} else {
+				std::cout << "  Error." << std::endl;
+			}
+		}
+		if(sub == 5) {
+			++pass;
+		}
+		++total;
+	}
+
+
+	{  // Test11: ポインター型検査。
+		float a = 0.0f;
+		static const char* form = { "%p" };
+		char res[64];
+		auto err = (utils::sformat(form, res, sizeof(res)) % &a).get_error();
+		char ref[64];
+		sprintf(ref, form, &a);
+		std::cout << "Test11, pointer type check: ("
+			<< static_cast<int>(err) << ") ";
+		if(err == format::error::none && strcmp(ref, res) == 0) {
+			list_result_(ref, res);
 			std::cout << "  Pass." << std::endl;
 			++pass;
 		} else {
@@ -334,108 +363,48 @@ int main(int argc, char* argv[])
 	}
 
 
-
-
-
-#if 0
-	{
-		utils::format("test for 'floating point auto(%%g) format':\n");
-		float a = 1210.05f;
-		printf("  printf: %%g(1210.05f): %g\n", a);
-		fflush(stdout);
-		utils::format("  format: %%g(1210.05f): %g\n") % a;
-	}
-
-	{
-		float a = 1000000.0f;
-		printf("  printf: %%e(1000000.0f): %e\n", a);
-		fflush(stdout);
-		utils::format("  format: %%e(1000000.0f): %e\n") % a;
-	}
-
-	{
-		sqri sq;
-		int a = sq(100);
-		utils::format("%d\n") % a;
-	}
-
-	using namespace utils;
-	{
-		static const char* t = { "Asdfg" };
-		format("'%s'\n") % t;
-	}
-
-	{
-		format("\nTest for char[]\n");
-		char tmp[100];
-		strcpy(tmp, "Qwert");
-		format("Qwert: '%s'\n\n") % tmp;
-	}
-
-	{
-		char str[] = { "Asdfg" };
-		int i = 123;
-		float a = 1000.105f;
-		float b = 0.0f;
-		format("%d, %d, '%s', %7.3f, %6.2f\n") % i % -i % str % a % b;
-	}
-
-	{  // 固定小数点
-		uint16_t val = (1 << 10) + 500; 
-		format("Fixed point: %4.3:10y\n") % val;
-	}
-
-	{  // sformat
-		format("\nsformat pass 1: in\n");
-		int a = 9817;
-		sformat("9817: %d\n") % a;
-
-		char tmp[4];
-		sformat("%d", tmp, sizeof(tmp)) % a;
-		format("'%s'\n\n") % tmp;
-	}
-
-	{
-		float x = 1.0f;
-		float y = 2.0f;
-		float z = 3.0f;
-		char tmp[512];
-		sformat("Value: %f, %f, %f\n", tmp, sizeof(tmp)) % x % y % z;
-		sformat("Value: %f, %f, %f\n", tmp, sizeof(tmp), true) % y % z % x;
-		sformat("Value: %f, %f, %f\n", tmp, sizeof(tmp), true) % z % x % y;
-		int size = sformat::chaout().size();
-		format("(%d)\n%s") % size % tmp;
-	}
-
-
-	{  // 異なったプロトタイプ
-		static const char* str = { "Poiuytrewq" };
-		int val = 1921;
-		format("%s, %d\n") % val % str;
-	}
-
-	{  // pointer
-		format("\nPointer test:\n");
-		const char* s = "ABCDEFG";
-		format("    Pointer(const char*): %p (%s)\n") % s % s;
-	}
-
-	format("\n");
-	{  // 0.01 * 10000
-		float a = 0.0f;
-		for(int i = 0; i < 10000; ++i) {
-			a += 0.01f;
+	{  // Test12: 浮動小数点、無限大表現検査
+		float a = std::numeric_limits<float>::infinity();
+		static const char* form = { "%f" };
+		char res[64];
+		auto err = (utils::sformat(form, res, sizeof(res)) % a).get_error();
+		char ref[64];
+		sprintf(ref, form, a);
+		std::cout << "Test12, floating point infinity check: ("
+			<< static_cast<int>(err) << ")";
+		if(err == format::error::none && strcmp(ref, res) == 0) {
+			list_result_(ref, res);
+			std::cout << "  Pass." << std::endl;
+			++pass;
+		} else {
+			std::cout << "  Error." << std::endl;
 		}
-		format("0.01 * 10000 (float): %6.3f\n") % a;
+		++total;
 	}
-	{  // 0.01 * 10000
-		double a = 0.0f;
-		for(int i = 0; i < 10000; ++i) {
-			a += 0.01;
+
+
+	{  // Test13: 型が異なる場合のエラー検査。
+		int a = 0;
+		static const char* form[] = { "%s", "%f", "%p", "%g" };
+		int sub = 0;
+		for(int i = 0; i < 4; ++i) {
+			char res[64];
+			auto err = (utils::sformat(form[i], res, sizeof(res)) % a).get_error();
+			std::cout << "Test13, different type, error code: ("
+				<< static_cast<int>(err) << ") '" << form[i] << "' (target float)";
+			if(err == format::error::different) {
+				std::cout << "  Pass." << std::endl;
+				++sub;
+			} else {
+				std::cout << "  Error." << std::endl;
+			}
 		}
-		std::cout << boost::format("0.01 * 10000 (double): %6.3f\n") % a;
+		if(sub == 4) {
+			++pass;
+		}
+		++total;
 	}
-#endif
+
 
 	std::cout << std::endl;
 	std::cout << "format class Version: " << format::VERSION << std::endl;
