@@ -47,6 +47,12 @@
 // float を無効にする場合（８ビット系マイコンでのメモリ節約用）
 // #define NO_FLOAT_FORM
 
+// ２進表示をサポートしない場合（メモリの節約）
+// #define NO_BIN_FORM
+
+// ８進表示をサポートしない場合（メモリの節約）
+// #define NO_OCTAL_FORM
+
 // 64 ビットの整数をサポートする場合
 #define USE_INT64
 
@@ -361,7 +367,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class base_format {
 	public:
-		static const uint16_t VERSION = 87;
+		static const uint16_t VERSION = 89;
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -369,11 +375,13 @@ namespace utils {
 		*/
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		enum class error : uint8_t {
-			none,		///< エラー無し
-			null,		///< 無効なポインター
-			unknown,	///< 不明な「型」
-			different,	///< 異なる「型」
-			over,		///< 数値の領域外（%c で char が扱える数値以外）
+			none,			///< エラー無し
+			null,			///< 無効なポインター
+			unknown,		///< 不明な「型」
+			different,		///< 異なる「型」
+			over,			///< 数値の領域外（%c で char が扱える数値以外）
+			out_null,		///< 文字出力先が無効
+			out_overflow,	///< 文字出力先がオーバーフローした場合
 		};
 	};
 
@@ -482,12 +490,16 @@ namespace utils {
 					} else if(ch == 'c') {
 						mode_ = mode::CHA;
 						return;
+#ifndef NO_BIN_FORM
 					} else if(ch == 'b') {
 						mode_ = mode::BINARY;
 						return;
+#endif
+#ifndef NO_OCTAL_FORM
 					} else if(ch == 'o') {
 						mode_ = mode::OCTAL;
 						return;
+#endif
 					} else if(ch == 'd' || ch == 'i') {
 						mode_ = mode::DECIMAL;
 						return;
@@ -566,7 +578,7 @@ namespace utils {
 			if(!nega_) { str_(str); }
 		}
 
-
+#ifndef NO_BIN_FORM
 		void out_bin_(uint32_t v) {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
@@ -579,8 +591,9 @@ namespace utils {
 			} while(v != 0) ;
 			out_str_(p, 0, n);
 		}
+#endif
 
-
+#ifndef NO_OCTAL_FORM
 		void out_oct_(uint32_t v) {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
@@ -593,7 +606,7 @@ namespace utils {
 			} while(v != 0) ;
 			out_str_(p, 0, n);
 		}
-
+#endif
 
 		void out_udec_(uint32_t v, char sign) {
 			char* p = &buff_[sizeof(buff_) - 1];
@@ -636,12 +649,16 @@ namespace utils {
 
 		void decimal_(int32_t val, bool sign) {
 			switch(mode_) {
+#ifndef NO_BIN_FORM
 			case mode::BINARY:
 				out_bin_(val);
 				break;
+#endif
+#ifndef NO_OCTAL_FORM
 			case mode::OCTAL:
 				out_oct_(val);
 				break;
+#endif
 			case mode::DECIMAL:
 				out_dec_(val);
 				break;
@@ -687,7 +704,7 @@ namespace utils {
 			VAL m = 0;
 			if(fixpoi < (sizeof(VAL) * 8 - 4)) {
 				m = static_cast<VAL>(5) << fixpoi;
-				uint8_t n = point_ + 1;
+				auto n = point_ + 1;
 				while(n > 0) {
 					m /= 10;
 					--n;
@@ -738,6 +755,7 @@ namespace utils {
 			*out++ = 0;
 			str_(buff_);			
 		}
+
 
 #ifndef NO_FLOAT_FORM
 		void out_real_(float v, char e)
@@ -861,7 +879,9 @@ namespace utils {
 			error_(error::none),
 			mode_(mode::NONE), zerosupp_(false), sign_(false)
 		{
-			chaout_.set(buff, size);
+			if(!chaout_.set(buff, size)) {
+				error_ = error::out_null;
+			}
 			if(!append) {
 				chaout_.clear();
 
