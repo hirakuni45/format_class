@@ -187,7 +187,8 @@ typedef basic_format<stdout_buffered_chaout<256> > format;
 ---
 ## プロジェクト（全体テスト）
 
-format クラスは、全体テストと共に提供されます。
+format クラスは、全体テストと共に提供されます。   
+※mingw64 環境で、clang++ を使ってコンパイルされます。
 
 ```
 make
