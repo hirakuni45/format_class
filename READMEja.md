@@ -1,25 +1,27 @@
-format class
-A C++ class for converting numbers to strings in a printf-like fashion
+format クラス   
+printf に似た仕様で数値から文字列へ変換する C++ クラス
 =========
 
-[Japanese](READMEja.md)
+[英語版](README.md)
 
-## overview
+## 概要
 
- In C++, there is a culture of not using functions that handle the variable arguments common in the C language.   
+ C++ では、C 言語で一般的な可変引数を扱う関数は使わない文化があります。   
    
- The main problem is that the arguments are passed through the stack and you don't know how many arguments are stored on the stack, which can cause the stack to overflow and adversely affect your system.
+ 一番の問題は、引数の引渡しはスタックを経由する点、又、スタックに引数が何個格納   
+ されているのか判らない点です、これによりスタックをオーバーフローさせ、システム   
+ に悪影響を与える事が出来てしまいます。   
    
-A typical implementation is the "printf" function.
- The compiler parses formatting statements and checks the integrity of the arguments, but it cannot check them completely.
- On the other hand, "printf" provides greater flexibility and makes it easier to work with characters and numbers.
-      
-Boost has a format.hpp which is flexible and safe for printf.
- It can take multiple arguments using the "%" operator overloading mechanism.
- boost::format is a good implementation, but it relies on iostream and is problematic for embedded microcontrollers.
+ 代表的な実装は「printf」関数です。   
+ コンパイラはフォーマット文を解析して、引数の整合性をチェックしますが、完全には   
+ チェックできません。   
+ 一方、「printf」は優れた柔軟性をもたらし、文字、数値を扱う事をたやすくします。   
    
- If you import iostream, the capacity will be enlarged.
-   
+ boost には、printf の柔軟性と、安全性を考慮した、format.hpp があります。   
+ ※「%」オペレーターのオーバーロード機構を利用して、複数の引数を受け取る事ができます。   
+ ※boost::format は優れた実装ですが、iostream に依存していて組み込みマイコンでは問題があります。    
+ ※iostream を取り込むと、容量が肥大化します。
+
 ```
     std::cout << "Hello!" << std::endl;
 
@@ -39,7 +41,7 @@ Boost has a format.hpp which is flexible and safe for printf.
    6700      48    2136    8884    22b4 hello.elf
 ```
 
-So I implemented the format class instead of printf, in imitation of the boost::format mechanism.
+ そこで、boost::format の仕組みをまねて、printf に代わる format クラスを実装しました。   
    
 ---
 ## 仕様
