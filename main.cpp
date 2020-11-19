@@ -461,6 +461,41 @@ int main(int argc, char* argv[])
 	}
 
 
+	{  // Test16: %7.6f -1 表示
+		char res[64];
+		float val = -99.0f;
+		auto err = (sformat("%7.6f", res, sizeof(res)) % val).get_error();
+		char ref[64];
+		sprintf(ref, "%7.6f", val);
+		std::cout << "Test16 floating point '-1' check.";
+		list_result_(ref, res);
+		if(strcmp(ref, res) == 0) {
+			std::cout << "  Pass." << std::endl;
+			++pass;
+		} else {
+			list_error_(err);
+		}
+		++total;
+	}
+
+	{  // Test17: %-7.6f -1 表示
+		char res[64];
+		float val = -99.0f;
+		auto err = (sformat("%-7.6f", res, sizeof(res)) % val).get_error();
+		char ref[64];
+		sprintf(ref, "%-7.6f", val);
+		std::cout << "Test17 floating point '%-' check.";
+		list_result_(ref, res);
+		if(strcmp(ref, res) == 0) {
+			std::cout << "  Pass." << std::endl;
+			++pass;
+		} else {
+			list_error_(err);
+		}
+		++total;
+	}
+
+
 	std::cout << std::endl;
 	std::cout << "format class Version: " << format::VERSION << std::endl;
 	if(pass == total) {
