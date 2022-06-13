@@ -8,10 +8,10 @@
 			※ N：全桁数、M：小数部桁数、L：小数部のビット数 @n
 			※ N には、小数点、符号が含まれる @n
 			Ex: %3.2:8y ---> 256 で 1.00、128 で 0.50、384 で 1.50 @n
-			と表示される。@n
+			と表示される。 @n
             ・NO_FLOAT_FORM を有効にすると、float 関係の機能を無効にでき @n
             メモリを節約出来る。@n
-			・組み込みマイコンでは、64 ビット整数、浮動小数点など、リソースを @n
+			・組み込みマイコンでは、64 ビット整数、倍精度浮動小数点など、リソースを @n
 			多く消費する為、サポートしていません。（オプションでサポートを追加する予定）
 			+ 2017/06/11 20:00- 標準文字出力クラスの再定義、実装 @n 
 			+ 2017/06/11 21:00- 固定文字列クラス向け chaout、実装 @n
@@ -33,8 +33,9 @@
 			! 2020/11/20 07:44- sformat 時の nega_ フラグの初期化漏れ
 			! 2020/11/20 07:44- nega_ 符号表示の順番、不具合
 			! 2020/11/20 16:59- uint 型を削除
+			! 2022/06/13 15:03- 'static const' を 'static constexpr' に変更
     @author 平松邦仁 (hira@rvf-rc45.net)
-	@copyright	Copyright (C) 2013, 2020 Kunihito Hiramatsu @n
+	@copyright	Copyright (C) 2013, 2022 Kunihito Hiramatsu @n
 				Released under the MIT license @n
 				https://github.com/hirakuni45/RX/blob/master/LICENSE
 */
@@ -57,7 +58,7 @@
 // ８進表示をサポートしない場合（メモリの節約）
 // #define NO_OCTAL_FORM
 
-// 64 ビットの整数をサポートする場合
+// 64 ビットの整数をサポートする場合（工事中）
 #define USE_INT64
 
 /* 
@@ -373,7 +374,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class base_format {
 	public:
-		static const uint16_t VERSION = 93;		///< バージョン番号（整数）
+		static constexpr uint16_t VERSION = 94;		///< バージョン番号（整数）
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -424,7 +425,7 @@ namespace utils {
 
 		const char*	form_;
 
-		char		buff_[34];
+		char		buff_[34];  // uint32_t 型で二進表示に必要な大きさ
 
 		uint16_t	num_;
 
@@ -436,12 +437,12 @@ namespace utils {
 		bool		sign_;
 		bool		nega_;
 
-		void str_(const char* str) {
+		void str_(const char* str) noexcept {
 			char ch;
 			while((ch = *str++) != 0) chaout_(ch);
 		}
 
-		void reset_() {
+		void reset_() noexcept {
 			num_ = 0;
 			point_ = 0;
 			bitlen_ = 0;
@@ -451,7 +452,7 @@ namespace utils {
 			nega_ = false;
 		}
 
-		void next_() {
+		void next_() noexcept {
 			enum class apmd : uint8_t {
 				none,
 				num,	// 数字
@@ -555,8 +556,7 @@ namespace utils {
 		}
 
 
-		void out_str_(const char* str, char sign, uint16_t n)
-		{
+		void out_str_(const char* str, char sign, uint16_t n) noexcept {
 			if(nega_) {
 				if(sign != 0) { chaout_(sign); }
 				str_(str);
@@ -588,7 +588,7 @@ namespace utils {
 		}
 
 #ifndef NO_BIN_FORM
-		void out_bin_(uint32_t v) {
+		void out_bin_(uint32_t v) noexcept {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
 			uint8_t n = 0;
@@ -603,7 +603,7 @@ namespace utils {
 #endif
 
 #ifndef NO_OCTAL_FORM
-		void out_oct_(uint32_t v) {
+		void out_oct_(uint32_t v) noexcept {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
 			uint8_t n = 0;
@@ -617,7 +617,7 @@ namespace utils {
 		}
 #endif
 
-		void out_udec_(uint32_t v, char sign) {
+		void out_udec_(uint32_t v, char sign) noexcept {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
 			uint8_t n = 0;
@@ -631,7 +631,7 @@ namespace utils {
 		}
 
 
-		void out_dec_(int32_t v) {
+		void out_dec_(int32_t v) noexcept {
 			char sign = 0;
 			if(v < 0) { v = -v; sign = '-'; }
 			else if(sign_) { sign = '+'; }
@@ -639,7 +639,7 @@ namespace utils {
 		}
 
 
-		void out_hex_(uint32_t v, char top) {
+		void out_hex_(uint32_t v, char top) noexcept {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
 			uint8_t n = 0;
@@ -656,7 +656,7 @@ namespace utils {
 		}
 
 
-		void decimal_(int32_t val, bool sign) {
+		void decimal_(int32_t val, bool sign) noexcept {
 			switch(mode_) {
 #ifndef NO_BIN_FORM
 			case mode::BINARY:
@@ -695,7 +695,7 @@ namespace utils {
 		}
 
 
-		uint64_t make_mask_(uint8_t num) {
+		uint64_t make_mask_(uint8_t num) noexcept {
 			uint64_t m = 0;
 			while(num > 0) {
 				m += m;
@@ -707,7 +707,7 @@ namespace utils {
 
 
 		template <typename VAL>
-		void out_fixed_point_(VAL v, uint8_t fixpoi, bool sign)
+		void out_fixed_point_(VAL v, uint8_t fixpoi, bool sign) noexcept
 		{
 			// 四捨五入処理用 0.5
 			VAL m = 0;
@@ -767,7 +767,7 @@ namespace utils {
 
 
 #ifndef NO_FLOAT_FORM
-		void out_real_(float v, char e)
+		void out_real_(float v, char e) noexcept
 		{
 			void* p = &v;
 			uint32_t fpv = *(uint32_t*)p;
@@ -823,7 +823,7 @@ namespace utils {
 		}
 #endif
 
-		void str_sub_(const char* val)
+		void str_sub_(const char* val) noexcept
 		{
 			if(mode_ == mode::STR) {
 				if(val == nullptr) {
@@ -840,7 +840,7 @@ namespace utils {
 		}
 
 
-		void pointer_(const void* val)
+		void pointer_(const void* val) noexcept
 		{
 			auto v = reinterpret_cast<uint64_t>(val);
 			if(sizeof(val) > 4) {
@@ -899,13 +899,16 @@ namespace utils {
 		}
 
 
+		virtual ~basic_format() { }
+
+
 		//-----------------------------------------------------------------//
 		/*!
 			@brief  出力ファンクタの参照
 			@return 出力ファンクタ
 		*/
 		//-----------------------------------------------------------------//
-		static CHAOUT& chaout() { return chaout_; }
+		static CHAOUT& chaout() noexcept { return chaout_; }
 
 
 		//-----------------------------------------------------------------//
