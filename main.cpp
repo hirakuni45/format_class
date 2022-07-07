@@ -1,6 +1,7 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <limits>
+#include <cmath>
 
 #include "format.hpp"
 
@@ -253,11 +254,11 @@ int main(int argc, char* argv[])
 	{  // Test07: %f の 数値をデコードする検査
 		float a = 1.00625f;
 		static const char* form[] = {
-			"form=%f", "form=%7.6f", "form=%07.6f", "form=%5.4f", "form=%05.4f",
+			"form=%f", "form=%7.6f", "form=%07.6f", "form=%5.4f", "form=%05.4f", "form=%6.0f"
 		};
 
 		int sub = 0;
-		for(int i = 0; i < 10; ++i) {
+		for(int i = 0; i < 12; ++i) {
 			char ref[64];
 			sprintf(ref, form[i >> 1], a);
 			char res[64];
@@ -272,7 +273,7 @@ int main(int argc, char* argv[])
 			}
 			a = -a;
 		}
-		if(sub == 10) {
+		if(sub == 12) {
 			++pass;
 		}
 		++total;
@@ -494,6 +495,71 @@ int main(int argc, char* argv[])
 		}
 		++total;
 	}
+
+	{  // Test18: ポインターアドレス表示 (char*)
+		char res[64];
+		static const char* val = res;
+		auto err = (sformat("%p", res, sizeof(res)) % val).get_error();
+		char ref[64];
+		sprintf(ref, "%p", val);
+		std::cout << "Test18 report pointer (char*) '%p' check.";
+		list_result_(ref, res);
+		if(strcmp(ref, res) == 0) {
+			std::cout << "  Pass." << std::endl;
+			++pass;
+		} else {
+			list_error_(err);
+		}
+		++total;
+	}
+
+	{  // Test19: ポインターアドレス表示 (int*)
+		char res[64];
+		static const int dec = 1234;
+		static const int* val = &dec;
+		auto err = (sformat("%p", res, sizeof(res)) % val).get_error();
+		char ref[64];
+		sprintf(ref, "%p", val);
+		std::cout << "Test19 report pointer (int*) '%p' check.";
+		list_result_(ref, res);
+		if(strcmp(ref, res) == 0) {
+			std::cout << "  Pass." << std::endl;
+			++pass;
+		} else {
+			list_error_(err);
+		}
+		++total;
+	}
+
+	{  // Test20: %g 表示
+		int sub = 0;
+		static const char* form = { "%g" };
+		int num = 9;
+		static const float mul[] = { 1e6f, 1e5f, -1e5f, 1e3f, 1.0f, 1e-3f, -1e-5f, 1e-5f, 1e-6f };
+		for(int i = 0; i < num * 2; ++i) {
+			auto a = mul[i >> 1];
+			if((i & 1) != 0) a *= sqrtf(2.0f);
+			char ref[64];
+			sprintf(ref, form, a);
+			char res[64];
+			auto err = (sformat(form, res, sizeof(res)) % a).get_error();
+			std::cout << "Test20(" << i << "), floating point auto check.";
+			list_result_(ref, res);
+			if(strcmp(ref, res) == 0) {
+				std::cout << "  Pass." << std::endl;
+				++sub;
+			} else {
+				list_error_(err);
+			}
+		}
+		if(sub == (num * 2)) {
+			++pass;
+		}
+		++total;
+	}
+
+
+	// std::cout << "1e-6: " << powf(10.0f, -6.0f) << std::endl;
 
 
 	std::cout << std::endl;
