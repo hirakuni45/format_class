@@ -849,25 +849,48 @@ namespace utils {
 		}
 
 
+		float abs_(float val) noexcept { if(val < 0.0f) return -val; else return val; }
+		float pow10_(int n) noexcept
+		{
+			switch(n) {
+			case 4: return 1e4;
+			case 5: return 1e5;
+			case 6: return 1e6;
+			case -4: return 1e-4;
+			case -5: return 1e-5;
+			case -6: return 1e-6;
+			default:
+				break;
+			}
+			float v = 1.0f;
+			if(n > 0) {
+				while(n > 0) { v *= 10.0f; --n; }
+			} else {
+				while(n < 0) { v /= 10.0f; ++n; }
+			}
+			return v;
+		}
+
+
 		void out_auto_real_(float v, char e) noexcept
 		{
-			if(std::fabs(v) >= powf(10.0f, static_cast<float>(num_))) {
+			if(abs_(v) >= pow10_(num_)) {
 				mode_ = mode::EXPONENT;
 				point_ = num_ - 1;
 				num_ = 1;
 				out_real_(v, e, true);
-			} else if(std::fabs(v) < powf(10.0f, -static_cast<float>(num_ - 2))) {
+			} else if(abs_(v) < pow10_(-(num_ - 2))) {
 				mode_ = mode::EXPONENT;
 				point_ = num_ - 1;
 				num_ = 1;
 				out_real_(v, e, true);
 			} else {
 				point_ = num_;
-				if(std::fabs(v) < 1.0f) {  // 小数点以下の場合
+				if(abs_(v) < 1.0f) {  // 小数点以下の場合
 					// 小数点以下の有効桁を求める
 					++num_;
 					for(uint8_t i = 1; i < point_; ++i) {
-						if(std::fabs(v) < powf(10.0f, static_cast<float>(-i))) {
+						if(abs_(v) < pow10_(-i)) {
 							++num_;
 							++point_;
 						} else {
@@ -955,9 +978,6 @@ namespace utils {
 			}
 			next_();
 		}
-
-
-		virtual ~basic_format() { }
 
 
 		//-----------------------------------------------------------------//
