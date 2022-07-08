@@ -42,15 +42,15 @@ Boost has a format.hpp which is flexible and safe for printf.
 So I implemented the format class instead of printf, in imitation of the boost::format mechanism.
    
 ---
-## 仕様
+## Specification
 
- - 基本的な仕様は「printf」に準拠しています。
- - パラメーターを渡す仕様は、boost::format とほぼ同じです。
- - printf と異なる部分、拡張された仕様もあります。
- - 名前空間は「utils」です。
- - 文字列の出力はファンクタを定義して、テンプレートパラメーターとします。   
-   ※標準的なファンクタ「stdout_buffered_chaout」クラスが定義されており、以下のように   
-   typedef されています。   
+ - The basic specification conforms to "printf.
+ - The specification for passing parameters is almost the same as boost::format.
+ - There are some parts that differ from printf, and some extended specifications.
+ - The namespace is "utils".
+ - For string output, a functor is defined and used as a template parameter.   
+   The standard functor "stdout_buffered_chaout" class is defined and typedef'd as follows   
+   typedefed.   
 
 ```
     typedef basic_format<stdout_buffered_chaout<256> > format;
@@ -60,56 +60,59 @@ So I implemented the format class instead of printf, in imitation of the boost::
     typedef basic_format<size_chaout> size_format;
 ```
 
-通常、整形された文字列は、標準出力「stdout」に出力されます。   
-※標準では、256 バイトでバッファリングされたバッファ経由です。
+Normally, the formatted string is output to the standard output "stdout".   
+The standard output is via buffer buffered at 256 bytes.
 
-バッファリングを行わない場合、「nformat」を利用出来ます。
+If buffering is not used, "nformat" can be used.
 
-メモリー上に文字列を出力する場合「sformat」を使います。
-※sprintf に相当
+To output strings in memory, use "sformat".
+Equivalent to "sprintf
 
-文字列を捨てたい場合、「null_format」を使います。
+If you want to discard strings, use "null_format".
 
-出力されるサイズを知りたい場合、「size_format」を使います。
+If you want to know the size of the output, use "size_format".
 
-※上記のファンクタは、format.hpp に実装があります。
+The above functor is implemented in "format.hpp".
 
-組み込みマイコンで使う事を考えて、エラーに関する処理では、「例外」を送出しません。
-入力変換時に起こったエラーは、エラー種別として取得する事ができます。
+Considering the use in an embedded microcontroller, "exceptions" are not raised in error-related processing.
+Errors that occur during input conversion can be retrieved as error types.
 
-- 一般的に、例外を使うと多くのメモリを消費します。
-- 例外を使った場合、エラーが発生して、正しい受取先が無い場合、致命的な問題を引き起こします。
-- 複数の変換で、エラーが同時に発生すると、最後のエラーが残ります。
+- In general, using exceptions consumes a lot of memory.
+- Using exceptions can cause fatal problems if an error occurs and there is no correct recipient.
+- If multiple conversions cause errors at the same time, the last error will remain.
 
 ---
-## 使い方
+## Usage
 
-### format.hpp をインクルードします。
+### Include format.hpp.
 
 ```
 #include "format.hpp"
 ```
 
-全ての機能を使うのに必要なヘッダーは「format.hpp」のみです。
+The only header needed to use all features is "format.hpp".
 
-### 名前空間は「utils」です。
+### The namespace is "utils".
 
-### サンプル
+### Sample
 
-・標準出力に「a」の内容を表示する。
+- Display the contents of "a" on standard output.
+
 ```
     int a = 1000;
     utils::format("%d\n") % a;
 ```
 
-・文字列「res」に「a」の内容を出力する。
+- Output the contents of "a" to the string "res".
+
 ```
     int a = 1000;
     char res[64];
     utils::sformat("%d\n", res, sizeof(res)) % a;
 ```
 
-・変換過程でのエラーを検査する。
+- Inspect for errors in the conversion process.
+
 ```
     int a = 1000;
     auto err = (utils::format("%d\n") % a).get_error();
@@ -120,92 +123,104 @@ So I implemented the format class instead of printf, in imitation of the boost::
     }
 ```
 
-・出力文字サイズのみを取得
+- Get output character size only
+
 ```
     int a = 1000;
     auto size = (utils::size_format("%d\n") % a).size();
 ```
 
-・固定小数点表示   
-組み込みマイコンでは、A/D 変換された整数を正規化して表示したい場合などが多いものです。   
-そこで、固定少数点表示を拡張機能として実装してあります。   
-※又、8/16 ビットマイコンなどでは、浮動小数点を扱うと極端にメモリを消費します。   
-※以下の例では、小数点以下１０ビットの場合。
-※表示桁（下の例では、小数点以下２桁）以降は四捨五入はされますが、ビット数が足りない場合は切り捨てられた値と同等になります。   
-※小数点以下３桁の表示が必要なら、四捨五入を考慮すると、１１ビットは必要です。
+- Fixed-point display   
+In embedded microcontrollers, there are many cases where you want to display A/D-converted integers in normalized form.   
+Therefore, the fixed-decimal-point display is implemented as an extended function.   
+- In addition, 8-/16-bit microcontrollers consume an extreme amount of memory when handling floating-point numbers.   
+- In the example below, the decimal point is 10 bits.
+- After the display digit (2 decimal places in the example below), the value is rounded off, but if the number of bits is insufficient, the value is equivalent to the truncated value.   
+- If you need to display 3 decimal places, 11 bits are necessary considering rounding.
+
 ```
     uint16_t a = 1000;
     utils::format("%3.2:10y") % a;
 ```
 
-・バッファリングされた文字を掃き出す
-文字を処理する速度を上げる為、少し前から、バッファが設けられています。   
-プロトタイプでは
+---
+
+- Sweeping Buffered Characters
+To increase the speed of processing characters, a buffer has been provided for some time now.   
+   
+In the prototype
+
 ```
 typedef basic_format<stdout_buffered_chaout<256> > format;
 ```
-となっていて、256 バイトのバッファです。   
-通常、"\n"（改行）コードで、バッファがフラッシュされますが、それではタイミング的に困る場合があります。
-もし、バッファの中身を掃き出したい場合は、以下のように明示的に指定します。
+
+and is a 256-byte buffer.   
+   
+Normally, the buffer is flushed with the "\n" (newline) code, but this may cause timing problems.   
+If you want to flush the buffer, specify it explicitly as follows   
+
+
 ```
     utils::format::chaout().flush();
 ```
    
 ---
-## 制限
 
-現在の実装では、「%g」浮動小数点オート表示に関する実装が「printf」と異なります。
-   
----
-## カスタマイズ
+## Customize
 
-8/16 ビットマイコンなどリソースの限られたプロジェクトで使う場合、カスタマイズする事が出来ます。   
-以下の定義をする事で、使わない機能を追い出し、コード量を最適化できます。
+When used in projects with limited resources, such as 8/16-bit microcontrollers, the software can be customized.   
+The following definitions can be used to optimize the amount of code by eliminating unused functions.   
 
 ```
-// float を無効にする場合（８ビット系マイコンでのメモリ節約用）
+// disable float (to save memory on 8-bit microcontrollers)
 // #define NO_FLOAT_FORM
 
-// ２進表示をサポートしない場合（メモリの節約）
+// if you do not support binary display (to save memory)
 // #define NO_BIN_FORM
 
-// ８進表示をサポートしない場合（メモリの節約）
+// if octal display is not supported (memory saving)
 // #define NO_OCTAL_FORM
+
 ```
 
 ---
-## 標準出力のカスタマイズ
+## Customizing standard output
 
-通常、標準出力は、stdout ハンドルを使い、write 関数を呼び出します。   
-処理系によっては、putchar 関数を使う事を強要される場合があり、その場合、以下の定義を使います。   
+Normally, standard output uses the stdout handle and calls the write function.   
+Some processors may force you to use the putchar function, in which case use the following definition.   
+- Uncomment it out.   
 
 ```
-// 最終的な出力として putchar を使う場合有効にする（通常は write [stdout] 関数）
-// #define USE_PUTCHAR
+// Enable if putchar is used as the final output (usually the write [stdout] function)
+#define USE_PUTCHAR
 ```
 
 ---
-## プロジェクト（全体テスト）
+## Project (Overall Test)
 
-format クラスは、全体テストと共に提供されます。   
-※mingw64 環境で、clang++ を使ってコンパイルされます。
+- The format class is provided with the overall test.   
+- It is compiled using clang++ in a mingw64 environment.   
 
 ```
 make
 ```
-で全体テストがコンパイルされます。
+
+The overall test is compiled with.   
+The full test is compiled with.   
 
 ```
 make run
 ```
 
-全体テストが走り、全てのテストが通過すると、正常終了となります。   
-※テストに失敗すると、-1 を返します。
+- If the overall test runs and all tests pass, the program exits normally.   
+- If the test fails, -1 is returned.   
+
+---
+Translated with www.DeepL.com/Translator (free version)
 
 ---
       
-License
-----
+## License
 
 [MIT](LICENSE)
 
