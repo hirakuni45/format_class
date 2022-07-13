@@ -12,6 +12,8 @@
 #include <limits>
 #include <cmath>
 
+// mingw64 環境では、標準の「write」関数より「putchar」を使った方が高速です。
+#define USE_PUTCHAR
 #include "format.hpp"
 
 namespace {
@@ -117,17 +119,17 @@ namespace {
 		if(s == "printf") {
         	// libc version
         	for(long i = 0; i < count; ++i)
-            	printf("%11.10f:%04d:%+g:%s:%x:%c:%%\n",
-                	a, 42, b, "str", 1000, (int)'X');
+            	printf("%11.10f:%04d:%+g:%s:%p:%c:%%\n",
+                	a, 42, b, "str", (void*)1000, (int)'X');
 		} else if(s == "boost") {
 			for(long i = 0; i < count; ++i) {
-				std::cout << boost::format("%11.10f:%04d:%+g:%s:%x:%c:%%\n")
-					% a % 42 % b % "str" % 1000 % (int)'X';
+				std::cout << boost::format("%11.10f:%04d:%+g:%s:%p:%c:%%\n")
+					% a % 42 % b % "str" % (void*)1000 % (int)'X';
 			}
 		} else if(s == "format") {
         	for(long i = 0; i < count; ++i) {
-            	utils::format("%11.10f:%04d:%+g:%s:%x:%c:%%\n")
-                	% a % 42 % b % "str" % 1000 % (int)'X';
+            	utils::format("%11.10f:%04d:%+g:%s:%p:%c:%%\n")
+                	% a % 42 % b % "str" % (void*)1000 % (int)'X';
 			}
 		}
 	}
