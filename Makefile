@@ -166,7 +166,17 @@ strip:
 endif
 
 run:
-	./$(TARGET)
+	make
+	./$(TARGET) -start
+
+time_printf:
+	time ./$(TARGET) -printf > list
+
+time_format:
+	time ./$(TARGET) -format > list
+
+time_boost:
+	time ./$(TARGET) -boost > list
 
 clean:
 	rm -rf $(BUILD) $(TARGET)$(FEXT)

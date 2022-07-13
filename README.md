@@ -80,6 +80,7 @@ Errors that occur during input conversion can be retrieved as error types.
 - In general, using exceptions consumes a lot of memory.
 - Using exceptions can cause fatal problems if an error occurs and there is no correct recipient.
 - If multiple conversions cause errors at the same time, the last error will remain.
+- It must be sturdy, and not crash or fall into an endless loop due to formatting inconsistencies or misuse.
 
 ---
 ## Usage
