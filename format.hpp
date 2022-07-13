@@ -35,7 +35,9 @@
 			! 2020/11/20 16:59- uint 型を削除
 			! 2022/06/13 15:03- 'static const' を 'static constexpr' に変更
 			! 2022/07/06 09:24- %6.0f の符号付きの場合に、スペースが足りなくなるバグ修正。(V95)
-			! 2022/07/07 20:52- %g の自動（有効桁）フォーマットの対応。(v96)
+			! 2022/07/07 20:52- %g の自動（有効桁６桁）フォーマットの対応。(v96)
+			! 2022/07/11 14:08- nan の識別と表示、及びテストの対応。(V97)
+			! 2022/07/13 14:45- %Ng の自動（Ｎの有効桁がある場合）フォーマットの対応。(v98)
     @author 平松邦仁 (hira@rvf-rc45.net)
 	@copyright	Copyright (C) 2013, 2022 Kunihito Hiramatsu @n
 				Released under the MIT license @n
@@ -101,7 +103,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class null_chaout {
 	public:
-		typedef unsigned int uint;
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
 
 		void operator() (char ch) noexcept { }
 
@@ -119,7 +121,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class size_chaout {
 	public:
-		typedef unsigned int uint;
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
 
 	private:
 		uint	size_;
@@ -149,7 +151,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class stdout_chaout {
 	public:
-		typedef unsigned int uint;
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
 
 	private:
 		uint	size_;
@@ -285,14 +287,6 @@ namespace utils {
 		//-----------------------------------------------------------------//
 		string_chaout() noexcept : str_(), term_() { }
 
-		void operator () (char ch) noexcept {
-			str_ += ch;
-			if(str_.size() >= str_.capacity()) {
-				term_(str_.c_str(), str_.size());
-				str_.clear();
-			}			
-		}
-
 		void clear() noexcept {
 			if(str_.size() > 0) {
 				term_(str_.c_str(), str_.size());
@@ -312,12 +306,26 @@ namespace utils {
 		STR& at_str() noexcept { return str_; }
 
 		TERM& at_term() noexcept { return term_; }
+
+		//-----------------------------------------------------------------//
+		/*!
+			@brief  ファンクタ用オペレータ
+			@param[in]	ch	出力文字
+		*/
+		//-----------------------------------------------------------------//
+		void operator () (char ch) noexcept {
+			str_ += ch;
+			if(str_.size() >= str_.capacity()) {
+				term_(str_.c_str(), str_.size());
+				str_.clear();
+			}			
+		}
 	};
 
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	/*!
-		@brief  メモリー文字列クラス
+		@brief  メモリー出力文字列クラス
 	*/
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class memory_chaout {
@@ -353,6 +361,12 @@ namespace utils {
 		}
 
 
+		//-----------------------------------------------------------------//
+		/*!
+			@brief  ファンクタ用オペレータ
+			@param[in]	ch	出力文字
+		*/
+		//-----------------------------------------------------------------//
 		void operator () (char ch) noexcept {
 			if(pos_ < limit_) {
 				dst_[pos_] = ch;
@@ -371,12 +385,12 @@ namespace utils {
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	/*!
-		@brief  簡易 format クラス共有定義
+		@brief	format 基本クラス定義
 	*/
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class base_format {
 	public:
-		static constexpr uint16_t VERSION = 96;		///< バージョン番号（整数）
+		static constexpr uint16_t VERSION = 98;		///< バージョン番号（整数）
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -439,6 +453,10 @@ namespace utils {
 		bool		zerosupp_;
 		bool		sign_;
 		bool		nega_;
+		bool		set_num_;
+		bool		set_poi_;
+		bool		auto_mode_;
+		bool		exp_mode_;
 
 		void str_(const char* str) noexcept {
 			char ch;
@@ -449,10 +467,15 @@ namespace utils {
 			num_ = 0;
 			point_ = 0;
 			bitlen_ = 0;
+			udec_num_ = 0;
 			mode_ = mode::NONE;
 			zerosupp_ = false;
 			sign_ = false;
 			nega_ = false;
+			set_num_ = false;
+			set_poi_ = false;
+			auto_mode_ = false;
+			exp_mode_ = false;
 		}
 
 		void next_() noexcept {
@@ -467,8 +490,8 @@ namespace utils {
 				error_ = error::null;
 				return;
 			}
+			auto md = apmd::none;
 			char ch;
-			apmd md = apmd::none;
 			while((ch = *form_++) != 0) {
 				if(md != apmd::none) {
 					if(ch == '+') {
@@ -483,9 +506,11 @@ namespace utils {
 							}
 							num_ *= 10;
 							num_ += static_cast<uint8_t>(ch);
+							set_num_ = true;
 						} else if(md == apmd::point) {
 							point_ *= 10;
 							point_ += static_cast<uint8_t>(ch);
+							set_poi_ = true;
 						} else if(md == apmd::bitlen) {
 							bitlen_ *= 10;
 							bitlen_ += static_cast<uint8_t>(ch);
@@ -620,7 +645,7 @@ namespace utils {
 		}
 #endif
 
-		char* out_udec_(uint32_t v) noexcept {
+		char* build_udec_(uint32_t v) noexcept {
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
 			udec_num_ = 0;
@@ -638,7 +663,7 @@ namespace utils {
 			char sign = 0;
 			if(v < 0) { v = -v; sign = '-'; }
 			else if(sign_) { sign = '+'; }
-			char* tmp = out_udec_(v);
+			char* tmp = build_udec_(v);
 			out_str_(tmp, sign, udec_num_);
 		}
 
@@ -677,7 +702,7 @@ namespace utils {
 				break;
 			case mode::U_DECIMAL:
 				{
-					char* tmp = out_udec_(val);
+					auto tmp = build_udec_(val);
 					out_str_(tmp, sign_ ? '+' : 0, udec_num_);
 				}
 				break;
@@ -702,7 +727,7 @@ namespace utils {
 		}
 
 
-		uint64_t make_mask_(uint8_t num) noexcept {
+		static uint64_t build_mask_(uint8_t num) noexcept {
 			uint64_t m = 0;
 			while(num > 0) {
 				m += m;
@@ -714,7 +739,7 @@ namespace utils {
 
 
 		template <typename VAL>
-		void out_fixed_point_(VAL v, uint8_t fixpoi, bool sign, bool zerodel = false) noexcept
+		void out_fixed_point_(VAL v, uint8_t fixpoi, bool sign) noexcept
 		{
 			// 四捨五入処理用 0.5
 			VAL m = 0;
@@ -731,84 +756,112 @@ namespace utils {
 			if(sign) sch = '-';
 			else if(sign_) sch = '+';
 			v += m;
-			if(mode_ != mode::REAL_AUTO && mode_ != mode::REAL_AUTO_CAPS) {
+			if(!auto_mode_) {
 				if(num_ >= point_) num_ -= point_;
 				if(num_ > 0 && point_ != 0) {
 					--num_;
 				}
 			}
-			char* tmp;
+			char* rnb_org;
 			if(fixpoi < (sizeof(VAL) * 8 - 4)) {
-				tmp = out_udec_(v >> fixpoi);
+				rnb_org = build_udec_(v >> fixpoi);
 			} else {
-				tmp = out_udec_(0);
+				rnb_org = build_udec_(0);
 			}
 
 			if(mode_ == mode::REAL_AUTO || mode_ == mode::REAL_AUTO_CAPS) {
-				if(num_ >= udec_num_) {
-					point_ = num_ - udec_num_;
-					num_ = udec_num_;
+				// 指定が無い場合６桁を維持
+				if(udec_num_ < 6) {
+					point_ = 6 - udec_num_;
 				} else {
-					return;
+					point_ = 0;
+				}
+				if(!set_num_) {
+					num_ = udec_num_;
 				}
 			}
 
-			out_str_(tmp, sch, udec_num_);
+			if(point_ > 0) {  // 小数点以下の構築
+				char* out = buff_;
+				*out++ = '.';
+				uint16_t l = 0;
+				if(fixpoi < (sizeof(VAL) * 8 - 4)) {
+					VAL dec = v & build_mask_(fixpoi);
+					while(dec > 0) {
+						dec *= 10;
+						VAL n = dec >> fixpoi;
+						*out++ = n + '0';
+						dec -= n << fixpoi;
+						++l;
+						if(l >= point_) break;
+					}
+				}
+				if(auto_mode_) {  // 後ろの「０」を除去
+					while(out > &buff_[1]) {
+						if(*(out - 1) == '0') --out;
+						else break;
+					}
+					if(out == &buff_[1]) --out;  // '.'
+				} else {
+					while(l < point_) {
+						*out++ = '0';
+						++l;
+					}
+				}
+				*out = 0;
 
-			if(point_ == 0) return;
-
-			char* out = buff_;
-			*out++ = '.';
-			uint16_t l = 0;
-			if(fixpoi < (sizeof(VAL) * 8 - 4)) {
-				VAL dec = v & make_mask_(fixpoi);
-				while(dec > 0) {
-					dec *= 10;
-					VAL n = dec >> fixpoi;
-					*out++ = n + '0';
-					dec -= n << fixpoi;
-					++l;
-					if(l >= point_) break;
+				if(auto_mode_) {  // AUTO モード
+					if(set_num_) {
+						uint32_t unp = out - &buff_[0];  // 小数点以下の数（小数点を含む）
+						uint32_t all = unp + udec_num_;
+						if(exp_mode_) all += 4;
+						if(sch != 0) ++all;
+						if(num_ > all) {
+							num_ -= all;  // 空白の数
+							num_ += udec_num_;
+							if(sch != 0) ++num_;
+						} else {
+							num_ = udec_num_;
+						}
+						if(unp == 0 && udec_num_ == 6) {
+							
+						}
+					} else {
+						num_ = udec_num_;
+					}
 				}
 			}
-			while(l < point_) {
-				*out++ = '0';
-				++l;
+			out_str_(rnb_org, sch, udec_num_);
+			if(point_ > 0) {
+				str_(buff_);
 			}
-
-			if(zerodel) {  // 小数点以下で、後ろの'0'を除去
-				while(out != &buff_[1]) {
-					if(*(out - 1) == '0') --out;
-					else break;
-				}
-				if(out == &buff_[1]) --out;
-			}
-
-			*out++ = 0;
-
-			str_(buff_);
-			return;
 		}
 
 
 #ifndef NO_FLOAT_FORM
-		void out_real_(float v, char e, bool zerodel = false) noexcept
+		void out_real_(float v, char e) noexcept
 		{
 			void* p = &v;
 			uint32_t fpv = *(uint32_t*)p;
 			bool sign = fpv >> 31;
-			int16_t exp = (fpv >> 23) & 0xff;
-			if(exp == 0xff) {
+			int16_t exp = (fpv >> 22) & 0x1ff;
+
+			if(exp >= 0x1fe) {  // inf, nan の検出
 				if(sign) chaout_('-');
-				str_("inf");
+				if(exp & 1) {
+					out_str_("nan", 0, 3);
+				} else {
+					out_str_("inf", 0, 3);
+				}
 				return;
 			}
+			exp >>= 1;
 
 			exp -= 127;	// bias (-127)
 			int32_t val = fpv & 0x7fffff;	// 23 bits
 			int16_t shift = 23;
-			if(val == 0 && exp == -127) ; // [0.0]
-			else {
+			if(val == 0 && exp == -127) { // [0.0]
+			} else {
 				val |= 0x800000; // add offset 1.0
 			}
 			shift -= exp;
@@ -820,48 +873,58 @@ namespace utils {
 				v64 <<= 32;
 			}
 
-			// エキスポーネント表記の場合
-			int8_t dexp = 0;
+			// エキスポーネント表記の場合に乗数を求める。
+			int8_t decexp = 0;
 			if(e != 0) {
 				auto ref = static_cast<uint64_t>(1) << shift;
 				if(v64 < ref) {  // 1.0 以下
-					while(v64 < (ref - (ref / 10))) {  // 0.99999...
+					ref -= ref / 10;  // 0.99999 の場合を考慮する為、誤差分を引く
+					while(v64 < ref) {  
 						v64 *= 10;
-						--dexp;
+						--decexp;
 					}
 				} else {
-					while(v64 > (static_cast<uint64_t>(2) << shift)) {
+					auto ref = static_cast<uint64_t>(2) << shift;
+					while(v64 >= ref) {  // 1.9999... 以上の場合
 						v64 /= 10;
-						++dexp;
+						++decexp;
 					}
 				}
 			}
 
-			out_fixed_point_<uint64_t>(v64, shift, sign, zerodel);
+			out_fixed_point_<uint64_t>(v64, shift, sign);
 
 			if(e != 0) {
 				chaout_(e);
 				zerosupp_ = true;
 				sign_ = true;
 				num_ = 3;
-				out_dec_(dexp);
+				out_dec_(decexp);
 			}
 		}
 
 
-		float abs_(float val) noexcept { if(val < 0.0f) return -val; else return val; }
-		float pow10_(int n) noexcept
+		static float abs_(float val) noexcept { if(val < 0.0f) return -val; else return val; }
+
+		static float pow10_(int n) noexcept
 		{
 			switch(n) {
-			case 4: return 1e4;
-			case 5: return 1e5;
-			case 6: return 1e6;
-			case -4: return 1e-4;
-			case -5: return 1e-5;
-			case -6: return 1e-6;
+			case 4: return 1e4f;
+			case 5: return 1e5f;
+			case 6: return 1e6f;
+			case 7: return 1e7f;
+			case 8: return 1e8f;
+			case 9: return 1e9f;
+			case -4: return 1e-3f;
+			case -5: return 1e-5f;
+			case -6: return 1e-6f;
+			case -7: return 1e-7f;
+			case -8: return 1e-8f;
+			case -9: return 1e-9f;
 			default:
 				break;
 			}
+
 			float v = 1.0f;
 			if(n > 0) {
 				while(n > 0) { v *= 10.0f; --n; }
@@ -874,31 +937,29 @@ namespace utils {
 
 		void out_auto_real_(float v, char e) noexcept
 		{
-			if(abs_(v) >= pow10_(num_)) {
-				mode_ = mode::EXPONENT;
-				point_ = num_ - 1;
-				num_ = 1;
-				out_real_(v, e, true);
-			} else if(abs_(v) < pow10_(-(num_ - 2))) {
-				mode_ = mode::EXPONENT;
-				point_ = num_ - 1;
-				num_ = 1;
-				out_real_(v, e, true);
+			if(abs_(v) >= pow10_(6)) {
+				exp_mode_ = true;
+				out_real_(v, e);
+			} else if(abs_(v) < pow10_(-(6 - 2))) {
+				exp_mode_ = true;
+				out_real_(v, e);
 			} else {
-				point_ = num_;
 				if(abs_(v) < 1.0f) {  // 小数点以下の場合
-					// 小数点以下の有効桁を求める
-					++num_;
-					for(uint8_t i = 1; i < point_; ++i) {
-						if(abs_(v) < pow10_(-i)) {
-							++num_;
-							++point_;
-						} else {
+					// 小数点以下の有効桁を表示する為の全体の桁数を求める。
+					int n = point_;
+					if(n > 6) n = 6;
+					for(int i = 1; i < 9; ++i) {
+						if(abs_(v) >= pow10_(-i)) {
+							point_ = i + n - 1;
 							break;
 						}
 					}
+					if(!set_num_) {
+						num_ = point_ + 1;
+					}
+					mode_ = mode::REAL;
 				}
-				out_real_(v, 0, true);
+				out_real_(v, 0);
 			}
 		}
 #endif
@@ -947,7 +1008,8 @@ namespace utils {
 			bitlen_(0),
 			udec_num_(0),
 			error_(error::none),
-			mode_(mode::NONE), zerosupp_(false), sign_(false), nega_(false)
+			mode_(mode::NONE), zerosupp_(false), sign_(false), nega_(false),
+			set_num_(false), set_poi_(false), auto_mode_(false), exp_mode_(false)
 		{
 			next_();
 		}
@@ -1173,10 +1235,7 @@ namespace utils {
 				}
 #ifndef NO_FLOAT_FORM
 			} else if(std::is_floating_point<T>::value) {
-				if(num_ == 0 && !zerosupp_ && point_ == 0) {
-					num_ = 6;
-					point_ = 6;
-				}
+				if(!set_poi_) point_ = 6;
 				switch(mode_) {
 				case mode::REAL:
 					out_real_(val, 0);
@@ -1188,9 +1247,11 @@ namespace utils {
 					out_real_(val, 'e');
 					break;
 				case mode::REAL_AUTO_CAPS:
+					auto_mode_ = true;
 					out_auto_real_(val, 'E');
 					break;
 				case mode::REAL_AUTO:
+					auto_mode_ = true;
 					out_auto_real_(val, 'e');
 					break;
 				default:
