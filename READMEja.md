@@ -83,8 +83,6 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 - 例外を使った場合、エラーが発生して、正しい受取先が無い場合、致命的な問題を引き起こします。
 - 複数の変換で、エラーが同時に発生すると、最後のエラーが残ります。
 - 頑丈な事、フォーマットの不整合や、間違った使い方で、クラッシュしたり無限ループに陥らない事。
-- 「printf 系を使えば良い」と言う意見もありますが、クリーンな物を作りたいし、コンパクトにしたい欲求があります。
-- 現状、速度面では「printf」より低速（float の表示で 1/2 程度）ですが、iostream よりは高速です。
 
 ---
 ## 使い方
@@ -222,24 +220,25 @@ make run
 
 ---
 
-### float 系変換の時間表示
+### 変換時間表示（目安）
 
-- printf の 速度を表示
-
-```
-make time_printf
-```
-
-- format の 速度を表示
+- 文字出力として「putchar」を使った場合。
 
 ```
-make time_format
-```
+ % time ./test_format_class.exe -boost > list
+real    0m2.043s
+user    0m0.000s
+sys     0m0.015s
 
-- boost (iostream) の速度表示
+ % time ./test_format_class.exe -printf > list
+real    0m0.695s
+user    0m0.015s
+sys     0m0.000s
 
-```
-make time_boost
+ % time ./test_format_class.exe -format > list
+real    0m0.501s
+user    0m0.000s
+sys     0m0.015s
 ```
 
 ---

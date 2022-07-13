@@ -216,6 +216,42 @@ make run
 - If the overall test runs and all tests pass, the program exits normally.   
 - If the test fails, -1 is returned.   
 
+### Individual Tests
+
+- Only individual tests can be run.
+- Tests can be specified as integers.
+
+Example: Running test-1 and test-5
+
+```
+./test_format_class -1 -5
+```
+
+---
+
+### Conversion time display (approximate)
+
+- When "putchar" is used as character output.
+
+```
+ % time ./test_format_class.exe -boost > list
+real    0m2.043s
+user    0m0.000s
+sys     0m0.015s
+
+ % time ./test_format_class.exe -printf > list
+real    0m0.695s
+user    0m0.015s
+sys     0m0.000s
+
+ % time ./test_format_class.exe -format > list
+real    0m0.501s
+user    0m0.000s
+sys     0m0.015s
+```
+
+---
+
 ---
 Translated with www.DeepL.com/Translator (free version)
 
