@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
 	int pass = 0;
 	int total = 0;
-	uint32_t exec = 0b0011'1111'1111'1111'1111'1111;
+	uint32_t exec = 0b0111'1111'1111'1111'1111'1111;
 
 	bool start = false;
 	if(argc > 1) {
@@ -309,9 +309,9 @@ int main(int argc, char* argv[])
 	}
 
 	if(exec & (1 << 6)) {  // Test07: %f の 数値をデコードする検査
-		float a = 1.00625f;
+		float a = sqrtf(5.0f);
 		static const char* form[] = {
-			"form=%f", "form=%7.6f", "form=%07.6f", "form=%5.4f", "form=%05.4f", "form=%6.0f"
+			"form=%f", "form=%9.8f", "form=%07.6f", "form=%5.4f", "form=%05.4f", "form=%6.0f"
 		};
 
 		int sub = 0;
@@ -546,6 +546,18 @@ int main(int argc, char* argv[])
 		char ref[64];
 		sprintf(ref, form, nan);
 		pass += list_result_(total + 1, 1, 1, "floating point 'nan' (not a number) check. ", ref, res, err);
+		++total;
+	}
+
+	if(exec & (1 << 22)) {  // Test23: %% の表示検査
+		static const char* form = { "%dabcdefg%%ABCDEFG%d" };
+		int a = 1234;
+		int b = 5678;
+		char res[64];
+		auto err = (utils::sformat(form, res, sizeof(res)) % a % b).get_error();
+		char ref[64];
+		sprintf(ref, form, a, b);
+		pass += list_result_(total + 1, 1, 1, "'%' check. ", ref, res, err);
 		++total;
 	}
 

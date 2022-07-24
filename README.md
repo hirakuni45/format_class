@@ -251,8 +251,6 @@ sys     0m0.015s
 ```
 
 ---
-
----
 Translated with www.DeepL.com/Translator (free version)
 
 ---

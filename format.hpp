@@ -27,17 +27,19 @@
 			! 2019/12/14 11:44- 符号の表示不具合修正。@n
 			+ 2020/01/02 11:05- ポインター表示機能「%p」追加。 @n
 			+ 2020/02/02 15:43- enum error など共有定義の継承。 @n
-			! 2019/02/02 19:42- 符号文字カウントの不具合修正。@n
-			+ 2020/02/04 05:23- std::string 型追加。@n
-			+ 2020/04/25 07:45- stdout_buffered_chaout に、操作位置を返すメソッド pos() を追加。
-			! 2020/11/20 07:44- sformat 時の nega_ フラグの初期化漏れ
-			! 2020/11/20 07:44- nega_ 符号表示の順番、不具合
-			! 2020/11/20 16:59- uint 型を削除
-			! 2022/06/13 15:03- 'static const' を 'static constexpr' に変更
-			! 2022/07/06 09:24- %6.0f の符号付きの場合に、スペースが足りなくなるバグ修正。(V95)
-			! 2022/07/07 20:52- %g の自動（有効桁６桁）フォーマットの対応。(v96)
-			! 2022/07/11 14:08- nan の識別と表示、及びテストの対応。(V97)
-			! 2022/07/13 14:45- %Ng の自動（Ｎの有効桁がある場合）フォーマットの対応。(v98)
+			! 2019/02/02 19:42- 符号文字カウントの不具合修正。 @n
+			+ 2020/02/04 05:23- std::string 型追加。 @n
+			+ 2020/04/25 07:45- stdout_buffered_chaout に、操作位置を返すメソッド pos() を追加。 @n
+			! 2020/11/20 07:44- sformat 時の nega_ フラグの初期化漏れ @n
+			! 2020/11/20 07:44- nega_ 符号表示の順番、不具合 @n
+			! 2020/11/20 16:59- uint 型を削除 @n
+			! 2022/06/13 15:03- 'static const' を 'static constexpr' に変更 @n
+			! 2022/07/06 09:24- %6.0f の符号付きの場合に、スペースが足りなくなるバグ修正。(V95) @n
+			! 2022/07/07 20:52- %g の自動（有効桁６桁）フォーマットの対応。(v96) @n
+			! 2022/07/11 14:08- nan の識別と表示、及びテストの対応。(V97) @n
+			! 2022/07/13 14:45- %Ng の自動（Ｎの有効桁がある場合）フォーマットの対応。(V98) @n
+			! 2022/07/14 13:31- 内部処理で、’if’ 文 から 'switch' へ変更（速度改善？、見やすさに貢献）(V99) @n
+			! 2022/07/24 17:48- V99 で変更した処理の不具合、'%%' の処理 (V100) 
     @author 平松邦仁 (hira@rvf-rc45.net)
 	@copyright	Copyright (C) 2013, 2022 Kunihito Hiramatsu @n
 				Released under the MIT license @n
@@ -190,7 +192,7 @@ namespace utils {
 	template <uint32_t BFN>
 	class stdout_buffered_chaout {
 	public:
-		typedef unsigned int uint;
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
 
 	private:
 		char	buff_[BFN];
@@ -225,7 +227,7 @@ namespace utils {
 			if(pos_ == 0) return;
 
 #ifdef USE_PUTCHAR
-			for(uint16_t i = 0; i < pos_; ++i) {
+			for(uint i = 0; i < pos_; ++i) {
 				putchar(buff_[i]);
 			}
 #else
@@ -243,9 +245,11 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class stdout_term {
 	public:
-		void operator() (const char* s, uint16_t l) noexcept {
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
+
+		void operator() (const char* s, uint l) noexcept {
 #ifdef USE_PUTCHAR
-			for(uint16_t i = 0; i < l; ++i) {
+			for(uint i = 0; i < l; ++i) {
 				putchar(s[i]);
 			}
 #else
@@ -262,7 +266,9 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class null_term {
 	public:
-		void operator() (const char* s, uint16_t l) { }
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
+
+		void operator() (const char* s, uint l) { }
 	};
 
 
@@ -329,10 +335,12 @@ namespace utils {
 	*/
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class memory_chaout {
-
-		char*		dst_;
-		uint32_t	limit_;
-		uint32_t	pos_;
+	public:
+		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
+	private:
+		char*	dst_;
+		uint	limit_;
+		uint	pos_;
 
 	public:
 		//-----------------------------------------------------------------//
@@ -343,7 +351,7 @@ namespace utils {
 		memory_chaout() noexcept : dst_(nullptr), limit_(0), pos_(0) { }
 
 
-		bool set(char* dst, uint32_t limit) noexcept
+		bool set(char* dst, uint limit) noexcept
 		{
 			if(dst == nullptr || limit <= 1) {
 				return false;
@@ -379,7 +387,7 @@ namespace utils {
 		void clear() noexcept { pos_ = 0; }
 
 
-		uint32_t size() const noexcept { return pos_; }
+		auto size() const noexcept { return pos_; }
 	};
 
 
@@ -390,7 +398,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	class base_format {
 	public:
-		static constexpr uint16_t VERSION = 98;		///< バージョン番号（整数）
+		static constexpr uint16_t VERSION = 100;		///< バージョン番号（整数）
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -494,11 +502,23 @@ namespace utils {
 			char ch;
 			while((ch = *form_++) != 0) {
 				if(md != apmd::none) {
-					if(ch == '+') {
+					switch(ch) {
+					case '+':
 						sign_ = true;
-					} else if(ch == '-') {
+						break;
+					case '-':
 						nega_ = true;
-					} else if(ch >= '0' && ch <= '9') {
+						break;
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
 						ch -= '0';
 						if(md == apmd::num) {
 							if(num_ == 0 && ch == 0) {
@@ -515,63 +535,69 @@ namespace utils {
 							bitlen_ *= 10;
 							bitlen_ += static_cast<uint8_t>(ch);
 						}
-					} else if(ch == '.') {
+						break;
+					case '.':
 						md = apmd::point;
-					} else if(ch == ':') {
+						break;
+					case ':':
 						md = apmd::bitlen;
-					} else if(ch == 's') {
+						break;
+					case 's':
 						mode_ = mode::STR;
 						return;
-					} else if(ch == 'c') {
+					case 'c':
 						mode_ = mode::CHA;
 						return;
 #ifndef NO_BIN_FORM
-					} else if(ch == 'b') {
+					case 'b':
 						mode_ = mode::BINARY;
 						return;
 #endif
 #ifndef NO_OCTAL_FORM
-					} else if(ch == 'o') {
+					case 'o':
 						mode_ = mode::OCTAL;
 						return;
 #endif
-					} else if(ch == 'd' || ch == 'i') {
+					case 'd':
+					case 'i':
 						mode_ = mode::DECIMAL;
 						return;
-					} else if(ch == 'u') {
+					case 'u':
 						mode_ = mode::U_DECIMAL;
 						return;
-					} else if(ch == 'x') {
+					case 'x':
 						mode_ = mode::HEX;
 						return;
-					} else if(ch == 'X') {
+					case 'X':
 						mode_ = mode::HEX_CAPS;
 						return;
-					} else if(ch == 'y') {
+					case 'y':
 						mode_ = mode::FIXED_REAL;
 						return;
-					} else if(ch == 'f' || ch == 'F') {
+					case 'f':
+					case 'F':
 						mode_ = mode::REAL;
 						return;
-					} else if(ch == 'e') {
+					case 'e':
 						mode_ = mode::EXPONENT;
 						return;
-					} else if(ch == 'E') {
+					case 'E':
 						mode_ = mode::EXPONENT_CAPS;
 						return;
-					} else if(ch == 'g') {
+					case 'g':
 						mode_ = mode::REAL_AUTO;
 						return;
-					} else if(ch == 'G') {
+					case 'G':
 						mode_ = mode::REAL_AUTO_CAPS;
 						return;
-					} else if(ch == 'p') {
+					case 'p':
 						mode_ = mode::POINTER;
 						return;
-					} else if(ch == '%') {
+					case '%':
 						chaout_(ch);
 						md = apmd::none;
-					} else {
+						break;
+					default:
 						error_ = error::unknown;
 						return;
 					}
