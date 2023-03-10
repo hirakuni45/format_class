@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 		std::cout << "    -printf    Speed test 'printf'" << std::endl;
 		std::cout << "    -boost     Speed test 'boost' (iostream)" << std::endl;
 		std::cout << "    -format    Speed test 'format'" << std::endl;
-		std::cout << "    -(1 to 32) Select test (1 to 32)" << std::endl;
+		std::cout << "    -(1 to 32) Select single test (1 to 32)" << std::endl;
 		return 0;
 	}
 

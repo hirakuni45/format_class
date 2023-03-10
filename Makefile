@@ -27,8 +27,8 @@ ifeq ($(OS),Windows_NT)
     LOCAL_INC_PATH := /mingw64/include
     LOCAL_LIB_PATH := /mingw64/lib
 	OPTLIBS =
-	CPMM	=	g++
-	CCMM	=	gcc
+	CPMM	=	clang
+	CCMM	=	clang
 	CFLAGS  = -DWIN32
 	PFLAGS  = -DWIN32 -DBOOST_USE_WINDOWS_H
 	LFLAGS =
