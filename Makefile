@@ -3,7 +3,7 @@
 #   @file
 #   @brief  format_class
 #   @author 平松邦仁 (hira@rvf-rc45.net)
-#	@copyright	Copyright (C) 2019 Kunihito Hiramatsu @n
+#	@copyright	Copyright (C) 2019, 2023 Kunihito Hiramatsu @n
 #				Released under the MIT license @n
 #				https://github.com/hirakuni45/glfw_app/blob/master/LICENSE
 #=======================================================================
@@ -24,8 +24,8 @@ ifeq ($(OS),Windows_NT)
     ICON_RC =
     SYSTEM := WIN
 	CPP_VER := -std=c++17
-    LOCAL_INC_PATH := /mingw64/include
-    LOCAL_LIB_PATH := /mingw64/lib
+    LOCAL_INC_PATH :=
+    LOCAL_LIB_PATH :=
 	OPTLIBS =
 	CPMM	=	clang
 	CCMM	=	clang
@@ -53,12 +53,12 @@ else
 		-Wl,-search_paths_first -Wl,-headerpad_max_install_names \
 		-framework AGL -framework Cocoa -framework OpenGL -framework IOKit \
 		-framework CoreFoundation -framework CoreVideo -framework OpenAL
-    LOCAL_INC_PATH := /opt/local/include
-    LOCAL_LIB_PATH := /opt/local/lib
+    LOCAL_INC_PATH :=
+    LOCAL_LIB_PATH :=
     OPTLIBS =
   else
-    LOCAL_INC_PATH := /usr/local/include
-    LOCAL_LIB_PATH := /usr/local/lib
+    LOCAL_INC_PATH :=
+    LOCAL_LIB_PATH :=
   endif
   CPMM	=	clang++
   CCMM	=	clang
