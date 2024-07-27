@@ -20,7 +20,7 @@ Boost has a format.hpp which is flexible and safe for printf.
    
  If you import iostream, the capacity will be enlarged.
    
-```
+```sh
     std::cout << "Hello!" << std::endl;
 
    text    data     bss     dec     hex filename
@@ -52,7 +52,7 @@ So I implemented the format class instead of printf, in imitation of the boost::
    The standard functor "stdout_buffered_chaout" class is defined and typedef'd as follows   
    typedefed.   
 
-```
+```C++
     typedef basic_format<stdout_buffered_chaout<256> > format;
     typedef basic_format<stdout_chaout> nformat;
     typedef basic_format<memory_chaout> sformat;
@@ -87,7 +87,7 @@ Errors that occur during input conversion can be retrieved as error types.
 
 ### Include format.hpp.
 
-```
+```C++
 #include "format.hpp"
 ```
 
@@ -99,14 +99,14 @@ The only header needed to use all features is "format.hpp".
 
 - Display the contents of "a" on standard output.
 
-```
+```C++
     int a = 1000;
     utils::format("%d\n") % a;
 ```
 
 - Output the contents of "a" to the string "res".
 
-```
+```C++
     int a = 1000;
     char res[64];
     utils::sformat("%d\n", res, sizeof(res)) % a;
@@ -114,7 +114,7 @@ The only header needed to use all features is "format.hpp".
 
 - Inspect for errors in the conversion process.
 
-```
+```C++
     int a = 1000;
     auto err = (utils::format("%d\n") % a).get_error();
     if(err == utils::error::none) {
@@ -126,7 +126,7 @@ The only header needed to use all features is "format.hpp".
 
 - Get output character size only
 
-```
+```C++
     int a = 1000;
     auto size = (utils::size_format("%d\n") % a).size();
 ```
@@ -139,7 +139,7 @@ Therefore, the fixed-decimal-point display is implemented as an extended functio
 - After the display digit (2 decimal places in the example below), the value is rounded off, but if the number of bits is insufficient, the value is equivalent to the truncated value.   
 - If you need to display 3 decimal places, 11 bits are necessary considering rounding.
 
-```
+```C++
     uint16_t a = 1000;
     utils::format("%3.2:10y") % a;
 ```
@@ -151,7 +151,7 @@ To increase the speed of processing characters, a buffer has been provided for s
    
 In the prototype
 
-```
+```C++
 typedef basic_format<stdout_buffered_chaout<256> > format;
 ```
 
@@ -161,7 +161,7 @@ Normally, the buffer is flushed with the "\n" (newline) code, but this may cause
 If you want to flush the buffer, specify it explicitly as follows   
 
 
-```
+```C++
     utils::format::chaout().flush();
 ```
    
@@ -202,14 +202,14 @@ Some processors may force you to use the putchar function, in which case use the
 - The format class is provided with the overall test.   
 - It is compiled using clang++ in a mingw64 environment.   
 
-```
+```sh
 make
 ```
 
 The overall test is compiled with.   
 The full test is compiled with.   
 
-```
+```sh
 make run
 ```
 
@@ -223,7 +223,7 @@ make run
 
 Example: Running test-1 and test-5
 
-```
+```sh
 ./test_format_class -1 -5
 ```
 
@@ -233,7 +233,7 @@ Example: Running test-1 and test-5
 
 - When "putchar" is used as character output.
 
-```
+```sh
  % time ./test_format_class.exe -boost > list
 real    0m2.043s
 user    0m0.000s

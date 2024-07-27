@@ -22,7 +22,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
  ※boost::format は優れた実装ですが、iostream に依存していて組み込みマイコンでは問題があります。    
  ※iostream を取り込むと、容量が肥大化します。
 
-```
+```sh
     std::cout << "Hello!" << std::endl;
 
    text    data     bss     dec     hex filename
@@ -54,7 +54,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
    ※標準的なファンクタ「stdout_buffered_chaout」クラスが定義されており、以下のように   
    typedef されています。   
 
-```
+```C++
     typedef basic_format<stdout_buffered_chaout<256> > format;
     typedef basic_format<stdout_chaout> nformat;
     typedef basic_format<memory_chaout> sformat;
@@ -89,7 +89,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 
 ### format.hpp をインクルードします。
 
-```
+```C++
 #include "format.hpp"
 ```
 
@@ -101,14 +101,14 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 
 - 標準出力に「a」の内容を表示する。
 
-```
+```C++
     int a = 1000;
     utils::format("%d\n") % a;
 ```
 
 - 文字列「res」に「a」の内容を出力する。
 
-```
+```C++
     int a = 1000;
     char res[64];
     utils::sformat("%d\n", res, sizeof(res)) % a;
@@ -116,7 +116,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 
 - 変換過程でのエラーを検査する。
 
-```
+```C++
     int a = 1000;
     auto err = (utils::format("%d\n") % a).get_error();
     if(err == utils::error::none) {
@@ -128,7 +128,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 
 - 出力文字サイズのみを取得
 
-```
+```C++
     int a = 1000;
     auto size = (utils::size_format("%d\n") % a).size();
 ```
@@ -141,7 +141,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 - 表示桁（下の例では、小数点以下２桁）以降は四捨五入はされますが、ビット数が足りない場合は切り捨てられた値と同等になります。   
 - 小数点以下３桁の表示が必要なら、四捨五入を考慮すると、１１ビットは必要です。
 
-```
+```C++
     uint16_t a = 1000;
     utils::format("%3.2:10y") % a;
 ```
@@ -150,13 +150,16 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 ・バッファリングされた文字を掃き出す
 文字を処理する速度を上げる為、少し前から、バッファが設けられています。   
 プロトタイプでは
-```
+
+```C++
 typedef basic_format<stdout_buffered_chaout<256> > format;
 ```
+
 となっていて、256 バイトのバッファです。   
 通常、"\n"（改行）コードで、バッファがフラッシュされますが、それではタイミング的に困る場合があります。
 もし、バッファの中身を掃き出したい場合は、以下のように明示的に指定します。
-```
+
+```C++
     utils::format::chaout().flush();
 ```
    
@@ -166,7 +169,7 @@ typedef basic_format<stdout_buffered_chaout<256> > format;
 8/16 ビットマイコンなどリソースの限られたプロジェクトで使う場合、カスタマイズする事が出来ます。   
 以下の定義をする事で、使わない機能を追い出し、コード量を最適化できます。
 
-```
+```C++
 // float を無効にする場合（８ビット系マイコンでのメモリ節約用）
 // #define NO_FLOAT_FORM
 
@@ -184,7 +187,7 @@ typedef basic_format<stdout_buffered_chaout<256> > format;
 処理系によっては、putchar 関数を使う事を強要される場合があり、その場合、以下の定義を使います。   
 - コメントアウトを外して下さい。   
 
-```
+```C++
 // 最終的な出力として putchar を使う場合有効にする（通常は write [stdout] 関数）
 #define USE_PUTCHAR
 ```
@@ -195,12 +198,12 @@ typedef basic_format<stdout_buffered_chaout<256> > format;
 - format クラスは、全体テストと共に提供されます。   
 - mingw64 環境で、clang++ を使ってコンパイルされます。
 
-```
+```sh
 make
 ```
 で全体テストがコンパイルされます。
 
-```
+```sh
 make run
 ```
 
@@ -214,7 +217,7 @@ make run
 
 例： test-1, test-5 を動かす場合
 
-```
+```sh
 ./test_format_class -1 -5
 ```
 
