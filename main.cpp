@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 
 	int pass = 0;
 	int total = 0;
-	uint32_t exec = 0b1111'1111'1111'1111'1111'1111;
+	uint32_t exec = 0b111'1111'1111'1111'1111'1111'1111;
 
 	bool start = false;
 	if(argc > 1) {
@@ -574,6 +574,81 @@ int main(int argc, char* argv[])
 		char ref[32];
 		sprintf(ref, form, a);
 		pass += list_result_(total + 1, 1, 1, "'%q' check. ", ref, res, err);
+		++total;
+	}
+
+	if(exec & (1 << 24)) {  // Test25: 64 bits 2 進数の検査
+		uint64_t a = 0b1101'1001'1011'0111'0010'1011'0101'1010'1110;
+		static const char* form[] = {
+			"form=%b", "form=%39b", "form=%038b", "form=%37b", "form=%033b"
+		};
+		static const char* ref[] = {
+			"form=110110011011011100101011010110101110",
+			"form=   110110011011011100101011010110101110",
+			"form=00110110011011011100101011010110101110",
+			"form= 110110011011011100101011010110101110",
+			"form=110110011011011100101011010110101110",
+		};
+		int sub = 0;
+		int num = 5;
+		for(int i = 0; i < num; ++i) {
+			char res[128];
+			auto err = (sformat(form[i], res, sizeof(res)) % a).get_error();
+			sub += list_result_(total + 1, i + 1, num, "binary check. ", ref[i], res, err);
+		}
+		if(sub == num) {
+			++pass;
+		}
+		++total;
+	}
+
+	if(exec & (1 << 25)) {  // Test26: 64 bits 10 進数の検査
+		static const char* form[] = {
+			"form=%d", "form=%20d", "form=%025d", "form=%20d", "form=%17d",
+		};
+		static const char* forms[] = {
+			"form=%lld", "form=%20lld", "form=%025lld", "form=%20lld", "form=%17lld",
+		};
+		int sub = 0;
+		int num = 5;
+		int64_t a = 0x86'567f'12A4'BF9C;
+		for(int i = 0; i < num * 2; ++i) {
+			char ref[128];
+			sprintf(ref, forms[i >> 1], a);
+			char res[128];
+			auto err = (sformat(form[i >> 1], res, sizeof(res)) % a).get_error();
+			sub += list_result_(total + 1, i + 1, num, "decimal 64 bits check. ", ref, res, err);
+			a += 97 * (i + 1);
+			a *= -1;
+		}
+		if(sub == (num * 2)) {
+			++pass;
+		}
+		++total;
+	}
+
+	if(exec & (1 << 26)) {  // Test27: 64 bits 16 進数の検査
+		uint64_t a = 0x567f'12A4'BF9C;
+		static const char* form[] = {
+			"form=%x", "form=%14x", "form=%015x", "form=%7x", "form=%07x",
+			"form=%X", "form=%14X", "form=%015X", "form=%7X", "form=%07X"
+		};
+		static const char* forms[] = {
+			"form=%llx", "form=%14llx", "form=%015llx", "form=%7llx", "form=%07llx",
+			"form=%llX", "form=%14llX", "form=%015llX", "form=%7llX", "form=%07llX"
+		};
+		int sub = 0;
+		int num = 10;
+		for(int i = 0; i < num; ++i) {
+			char ref[128];
+			sprintf(ref, forms[i], a);
+			char res[128];
+			auto err = (sformat(form[i], res, sizeof(res)) % a).get_error();
+			sub += list_result_(total + 1, i + 1, num, "hex-decimal 64 bits check. ", ref, res, err);
+		}
+		if(sub == num) {
+			++pass;
+		}
 		++total;
 	}
 

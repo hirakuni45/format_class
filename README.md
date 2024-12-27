@@ -44,13 +44,15 @@ So I implemented the format class instead of printf, in imitation of the boost::
 ---
 ## Specification
 
- - The basic specification conforms to "printf.
- - The specification for passing parameters is almost the same as boost::format.
- - There are some parts that differ from printf, and some extended specifications.
- - The namespace is "utils".
- - For string output, a functor is defined and used as a template parameter.   
-   The standard functor "stdout_buffered_chaout" class is defined and typedef'd as follows   
-   typedefed.   
+- C++17 or later compiler is required
+- The basic specification conforms to "printf.
+- The specification for passing parameters is almost the same as boost::format.
+- There are some parts that differ from printf, and some extended specifications.
+- The namespace is "utils".
+- For string output, a functor is defined and used as a template parameter.   
+   
+  The standard functor "stdout_buffered_chaout" class is defined and typedef'd as follows   
+  typedefed.   
 
 ```C++
     typedef basic_format<stdout_buffered_chaout<256> > format;
