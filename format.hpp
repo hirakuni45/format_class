@@ -45,8 +45,9 @@
 			! 2024/09/01 22:00- %q など、仕様外の文字に対する挙動 @n
 			+ 2024/12/27 13:35- (v120) 64 bits 整数の変換をサポート（２進、８進、１０進、１６進）
 			+ 2025/01/02 13:17- (v121) cleanup
+			+ 2025/03/27 12:19- (V122) %-0xxxd の場合の不具合修正
     @author 平松邦仁 (hira@rvf-rc45.net)
-	@copyright	Copyright (C) 2013, 2024 Kunihito Hiramatsu @n
+	@copyright	Copyright (C) 2013, 2025 Kunihito Hiramatsu @n
 				Released under the MIT license @n
 				https://github.com/hirakuni45/RX/blob/master/LICENSE
 */
@@ -401,7 +402,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	struct base_format {
 
-		static constexpr uint16_t VERSION = 121;		///< バージョン番号（整数）
+		static constexpr uint16_t VERSION = 122;		///< バージョン番号（整数）
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -455,10 +456,10 @@ namespace utils {
 		char		buff_[64 + 2];  // uint64_t 型で二進表示に必要な大きさ
 
 		uint16_t	num_;
-
 		uint8_t		point_;
 		uint8_t		bitlen_;
 		uint8_t		udec_num_;
+
 		error		error_;
 		mode		mode_;
 		bool		zerosupp_;
@@ -624,17 +625,16 @@ namespace utils {
 			auto num = num_;
 			if(sign != 0 && num > 0) { num--; } 
 			if(n > 0 && n < num) {
-				auto spc = num - n;
-				if(zerosupp_) {
+				auto cnt = num - n;
+				if(!nega_ && zerosupp_) {
 					if(sign != 0) { chaout_(sign); }
-					while(spc) {
-						--spc;
+					while(cnt > 0) {
+						--cnt;
 						chaout_('0');
 					}
 				} else {
-					auto spc = num - n;
-					while(spc) {
-						--spc;
+					while(cnt > 0) {
+						--cnt;
 						chaout_(' ');
 					}
 					if(!nega_ && sign != 0) { chaout_(sign); }
@@ -944,7 +944,7 @@ namespace utils {
 		}
 
 
-		static float abs_(float val) noexcept { if(val < 0.0f) return -val; else return val; }
+		static inline float abs_(float val) noexcept { if(val < 0.0f) return -val; else return val; }
 
 		static float pow10_(int n) noexcept
 		{
