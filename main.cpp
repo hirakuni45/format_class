@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 
 	int pass = 0;
 	int total = 0;
-	uint32_t exec = 0b111'1111'1111'1111'1111'1111'1111;
+	uint32_t exec = 0b1111'1111'1111'1111'1111'1111'1111;
 
 	bool start = false;
 	if(argc > 1) {
@@ -644,7 +644,28 @@ int main(int argc, char* argv[])
 			sprintf(ref, forms[i], a);
 			char res[128];
 			auto err = (sformat(form[i], res, sizeof(res)) % a).get_error();
-			sub += list_result_(total + 1, i + 1, num, "hex-decimal 64 bits check. ", ref, res, err);
+			sub += list_result_(total + 1, i + 1, num, "hex-decimal 64 bits check.", ref, res, err);
+		}
+		if(sub == num) {
+			++pass;
+		}
+		++total;
+	}
+
+	if(exec & (1 << 27)) {  // Test28: 多数桁指定の確認
+		int j = 1234567;
+		static const char* form[] = {
+			"%0130d", "%130d",
+			"%-0130d", "%-130d"
+		};
+		int sub = 0;
+		int num = 4;
+		for(int i = 0; i < num; ++i) {
+			char ref[200];
+			sprintf(ref, form[i], j);
+			char res[200];
+			auto err = (sformat(form[i], res, sizeof(res)) % j).get_error();
+			sub += list_result_(total + 1, i + 1, num, "multi-digit display.", ref, res, err);
 		}
 		if(sub == num) {
 			++pass;
