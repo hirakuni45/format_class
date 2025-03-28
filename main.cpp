@@ -681,4 +681,9 @@ int main(int argc, char* argv[])
 		std::cout << "Pass for: " << pass << '/' << total << std::endl;
 		return -1;
 	}
+
+//	{
+//		std::cout << std::numeric_limits<uint64_t>::max() << std::endl;
+//		// 18446744073709551615 (20 digits)
+//	}
 }

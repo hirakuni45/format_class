@@ -46,6 +46,7 @@
 			+ 2024/12/27 13:35- (v120) 64 bits 整数の変換をサポート（２進、８進、１０進、１６進）
 			+ 2025/01/02 13:17- (v121) cleanup
 			+ 2025/03/27 12:19- (V122) %-0xxxd の場合の不具合修正
+			+ 2025/03/28 16:19- (V123) 二進表示の場合にバッファを利用しない
     @author 平松邦仁 (hira@rvf-rc45.net)
 	@copyright	Copyright (C) 2013, 2025 Kunihito Hiramatsu @n
 				Released under the MIT license @n
@@ -61,7 +62,7 @@
 // 最終的な出力として putchar を使う場合有効にする（通常は write [stdout] 関数）
 // #define USE_PUTCHAR
 
-// float を無効にする場合（８ビット系マイコンでのメモリ節約用）
+// float を無効にする場合（メモリ節約）
 // #define NO_FLOAT_FORM
 
 // ２進表示をサポートしない場合（メモリの節約）
@@ -387,9 +388,7 @@ namespace utils {
 			}
 		}
 
-
 		void clear() noexcept { pos_ = 0; }
-
 
 		auto size() const noexcept { return pos_; }
 	};
@@ -402,7 +401,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	struct base_format {
 
-		static constexpr uint16_t VERSION = 122;		///< バージョン番号（整数）
+		static constexpr uint16_t VERSION = 123;		///< バージョン番号（整数）
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -453,7 +452,9 @@ namespace utils {
 
 		const char*	form_;
 
-		char		buff_[64 + 2];  // uint64_t 型で二進表示に必要な大きさ
+		// ８進表示に必要な文字数＋サイン＋ターミネーター（１０進表示は２０桁必要）
+		// ※２進表示は、バッファを使わない
+		char		buff_[22 + 1 + 1];
 
 		uint16_t	num_;
 		uint8_t		point_;
@@ -616,12 +617,7 @@ namespace utils {
 		}
 
 
-		void out_str_(const char* str, char sign, uint16_t n) noexcept {
-			if(nega_) {
-				if(sign != 0) { chaout_(sign); }
-				str_(str);
-			}
-
+		void zero_spc_(char sign, uint16_t n) noexcept {
 			auto num = num_;
 			if(sign != 0 && num > 0) { num--; } 
 			if(n > 0 && n < num) {
@@ -642,13 +638,53 @@ namespace utils {
 			} else {
 				if(!nega_ && sign != 0) { chaout_(sign); }
 			}
+		}
+
+
+		void out_str_(const char* str, char sign, uint16_t n) noexcept {
+			if(nega_) {
+				if(sign != 0) { chaout_(sign); }
+				str_(str);
+			}
+
+			zero_spc_(sign, n);
 
 			if(!nega_) { str_(str); }
 		}
 
 #ifndef NO_BIN_FORM
 		template <typename T>
+		uint8_t out_bin0_(T v, uint8_t n) noexcept {
+			auto tmp = static_cast<T>(1) << (n - 1);
+			for(uint8_t i = 0; i < n; ++i) {
+				if((v & tmp) != 0) {
+					chaout_('1');
+				} else {
+					chaout_('0');
+				}
+				tmp >>= 1;
+			}
+			return n;
+		}
+
+		template <typename T>
 		void out_bin_(T v) noexcept {
+			uint8_t n = 0;
+			auto tmp = v;
+			do {
+				tmp >>= 1;
+				++n;
+			} while(tmp != 0) ;
+
+			if(nega_) {
+				out_bin0_(v, n);
+			}
+
+			zero_spc_(0, n);
+
+			if(!nega_) { out_bin0_(v, n); }
+
+#if 0
 			char* p = &buff_[sizeof(buff_) - 1];
 			*p = 0;
 			uint8_t n = 0;
@@ -659,6 +695,7 @@ namespace utils {
 				++n;
 			} while(v != 0) ;
 			out_str_(p, 0, n);
+#endif
 		}
 #endif
 
