@@ -452,7 +452,7 @@ namespace utils {
 
 		const char*	form_;
 
-		// ８進表示に必要な文字数＋サイン＋ターミネーター（１０進表示は２０桁必要）
+		// ６４ビットで８進表示に必要な文字数＋サイン＋ターミネーター（１０進表示は２０桁必要）
 		// ※２進表示は、バッファを使わない
 		char		buff_[22 + 1 + 1];
 
@@ -616,7 +616,6 @@ namespace utils {
 			}
 		}
 
-
 		void zero_spc_(char sign, uint16_t n) noexcept {
 			auto num = num_;
 			if(sign != 0 && num > 0) { num--; } 
@@ -639,7 +638,6 @@ namespace utils {
 				if(!nega_ && sign != 0) { chaout_(sign); }
 			}
 		}
-
 
 		void out_str_(const char* str, char sign, uint16_t n) noexcept {
 			if(nega_) {
@@ -683,19 +681,6 @@ namespace utils {
 			zero_spc_(0, n);
 
 			if(!nega_) { out_bin0_(v, n); }
-
-#if 0
-			char* p = &buff_[sizeof(buff_) - 1];
-			*p = 0;
-			uint8_t n = 0;
-			do {
-				--p;
-				*p = (v & 1) + '0';
-				v >>= 1;
-				++n;
-			} while(v != 0) ;
-			out_str_(p, 0, n);
-#endif
 		}
 #endif
 
@@ -729,7 +714,6 @@ namespace utils {
 			return p;
 		}
 
-
 		template <typename T>
 		void out_dec_(T v) noexcept {
 			char sign = 0;
@@ -739,7 +723,6 @@ namespace utils {
 			tmp = build_udec_<typename std::make_unsigned<T>::type>(v);
 			out_str_(tmp, sign, udec_num_);
 		}
-
 
 		template <typename T>
 		void out_hex_(T v, char top) noexcept {
@@ -757,7 +740,6 @@ namespace utils {
 			} while(v != 0) ;
 			out_str_(p, 0, n);
 		}
-
 
 		template <typename T>
 		void decimal_(T val, bool sign) noexcept {
@@ -803,7 +785,6 @@ namespace utils {
 			}
 		}
 
-
 		static uint64_t build_mask_(uint8_t num) noexcept {
 			uint64_t m = 0;
 			while(num > 0) {
@@ -813,7 +794,6 @@ namespace utils {
 			}
 			return m;
 		}
-
 
 		template <typename VAL>
 		void out_fixed_point_(VAL v, uint8_t fixpoi, bool sign) noexcept
@@ -914,7 +894,6 @@ namespace utils {
 			}
 		}
 
-
 #ifndef NO_FLOAT_FORM
 		void out_real_(float v, char e) noexcept
 		{
@@ -980,7 +959,6 @@ namespace utils {
 			}
 		}
 
-
 		static inline float abs_(float val) noexcept { if(val < 0.0f) return -val; else return val; }
 
 		static float pow10_(int n) noexcept
@@ -1010,7 +988,6 @@ namespace utils {
 			}
 			return v;
 		}
-
 
 		void out_auto_real_(float v, char e) noexcept
 		{
@@ -1057,7 +1034,6 @@ namespace utils {
 				error_ = error::different;
 			}
 		}
-
 
 		// ポインター値の１６進表示（最近の実装では、大文字で表示）
 		void pointer_(const void* val) noexcept
