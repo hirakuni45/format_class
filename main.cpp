@@ -2,7 +2,7 @@
 /*! @file
     @brief  utils::format クラス・テストケース
     @author 平松邦仁 (hira@rvf-rc45.net)
-	@copyright	Copyright (C) 2021, 2022 Kunihito Hiramatsu @n
+	@copyright	Copyright (C) 2021, 2026 Kunihito Hiramatsu @n
 				Released under the MIT license @n
 				https://github.com/hirakuni45/RX/blob/master/LICENSE
 */
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 
 	int pass = 0;
 	int total = 0;
-	uint32_t exec = 0b1111'1111'1111'1111'1111'1111'1111;
+	uint32_t exec = 0b0001'1111'1111'1111'1111'1111'1111'1111;
 
 	bool start = false;
 	if(argc > 1) {
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
 	if(exec & (1 << 6)) {  // Test07: %f の 数値をデコードする検査
 		float a = sqrtf(5.0f);
 		static const char* form[] = {
-			"form=%f", "form=%9.8f", "form=%07.6f", "form=%5.4f", "form=%05.4f", "form=%6.0f"
+			"form=%f", "form=%9.8f", "form=%07.6f", "form=%5.4f", "form=%05.4f", "form=%6.0f",
 		};
 
 		int sub = 0;
@@ -666,6 +666,29 @@ int main(int argc, char* argv[])
 			char res[200];
 			auto err = (sformat(form[i], res, sizeof(res)) % j).get_error();
 			sub += list_result_(total + 1, i + 1, num, "multi-digit display.", ref, res, err);
+		}
+		if(sub == num) {
+			++pass;
+		}
+		++total;
+	}
+
+	if(exec & (1 << 28)) {  // Test29: %.3f の デコード検査
+		static constexpr char form[] = {
+			"form=%.3f"
+		};
+		static constexpr float value[] = {
+			0.001f, 1.123f, 123.546f, 1230.0f, 0.00000567f, 253.4567f
+		};
+
+		int sub = 0;
+		int num = 6;
+		for(int i = 0; i < num; ++i) {
+			char ref[64];
+			sprintf(ref, form, value[i]);
+			char res[64];
+			auto err = (sformat(form, res, sizeof(res)) % value[i]).get_error();
+			sub += list_result_(total + 1, i + 1, num, "floating point check. ", ref, res, err);
 		}
 		if(sub == num) {
 			++pass;
