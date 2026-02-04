@@ -53,6 +53,8 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
 - printf と異なる部分、拡張された仕様もあります
 - 名前空間は「utils」です
 - 文字列の出力はファンクタを定義して、テンプレートパラメーターとします
+- double 型はサポートしていません、float 型にキャストする必要があります
+- 64 bits 整数はサポートしています
    
 ※標準的なファンクタ「stdout_buffered_chaout」クラスが定義されており、以下のように   
 typedef されています。
@@ -254,7 +256,7 @@ sys     0m0.015s
 [MIT](LICENSE)
 
 ```
-Copyright (c) 2020, Hiramatsu Kunihito
+Copyright (c) 2020, 2025 Hiramatsu Kunihito
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

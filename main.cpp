@@ -678,11 +678,11 @@ int main(int argc, char* argv[])
 			"form=%.3f"
 		};
 		static constexpr float value[] = {
-			0.001f, 1.123f, 123.546f, 1230.0f, 0.00000567f, 253.4567f
+			0.001f, 1.123f, 123.546f, 1230.0f, 0.00000567f, 253.4597f, 5678.2794f
 		};
 
 		int sub = 0;
-		int num = 6;
+		int num = 7;
 		for(int i = 0; i < num; ++i) {
 			char ref[64];
 			sprintf(ref, form, value[i]);
