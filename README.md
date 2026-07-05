@@ -50,8 +50,9 @@ So I implemented the format class instead of printf, in imitation of the boost::
 - There are some parts that differ from printf, and some extended specifications.
 - The namespace is "utils".
 - For string output, a functor is defined and used as a template parameter.   
-- Double type is not supported; it must be cast to float type
-- 64-bit integers are supported
+- Double type is not supported; it must be cast to float type.
+- 64-bit integers are supported.
+- In multi-threaded environments, you must implement your own mutual exclusion control.
    
   The standard functor "stdout_buffered_chaout" class is defined and typedef'd as follows   
   typedefed.   
