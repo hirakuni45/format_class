@@ -43,12 +43,14 @@
 			! 2023/03/03 22:44- ポインター値の１６進表示を大文字にする。 @n
 			! 2024/08/20 10:00- %0s の挙動を 'printf' に合わせる @n
 			! 2024/09/01 22:00- %q など、仕様外の文字に対する挙動 @n
-			+ 2024/12/27 13:35- (v120) 64 bits 整数の変換をサポート（２進、８進、１０進、１６進）
-			+ 2025/01/02 13:17- (v121) cleanup
-			+ 2025/03/27 12:19- (V122) %-0xxxd の場合の不具合修正
-			+ 2025/03/28 16:19- (V123) 二進表示の場合にバッファを利用しない
+			+ 2024/12/27 13:35- (v120) 64 bits 整数の変換をサポート（２進、８進、１０進、１６進） @n
+			+ 2025/01/02 13:17- (v121) cleanup @n
+			+ 2025/03/27 12:19- (V122) %-0xxxd の場合の不具合修正 @n
+			+ 2025/03/28 16:19- (V123) 二進表示の場合にバッファを利用しない @n
+			+ 2026/07/31 15:20- (V124) stdout 出力の改修、stderr 出力の追加 @n
+			+ 2026/08/22 04:19- (V125) 文字列出力時の初期化リストの修正
     @author 平松邦仁 (hira@rvf-rc45.net)
-	@copyright	Copyright (C) 2013, 2025 Kunihito Hiramatsu @n
+	@copyright	Copyright (C) 2013, 2026 Kunihito Hiramatsu @n
 				Released under the MIT license @n
 				https://github.com/hirakuni45/RX/blob/master/LICENSE
 */
@@ -152,10 +154,12 @@ namespace utils {
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	/*!
-		@brief  標準出力ファンクタ
+		@brief  出力ファンクタ
+		@param[in]	OFN		出力ファイル番号
 	*/
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-	struct stdout_chaout {
+	template <int OFN>
+	struct out_chaout {
 
 		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
 
@@ -168,16 +172,22 @@ namespace utils {
 			@brief  コンストラクター
 		*/
 		//-----------------------------------------------------------------//
-		stdout_chaout() noexcept : size_(0) { } 
+		out_chaout() noexcept : size_(0) { } 
 
 		void operator() (char ch) noexcept
 		{
+			if(OFN == STDOUT_FILENO) {
 #ifdef USE_PUTCHAR
-			putchar(ch);
+				putchar(ch);
 #else
-			char tmp = ch;
-			write(STDOUT_FILENO, &tmp, 1);
+				char tmp = ch;
+				write(STDOUT_FILENO, &tmp, 1);
 #endif
+			} else {
+				char tmp = ch;
+				write(OFN, &tmp, 1);
+			}
+
 			++size_;
 		}
 
@@ -190,11 +200,12 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	/*!
 		@brief  標準出力バッファリングファンクタ
+		@param[in]	OFN		出力ファイル番号
 		@param[in]	BFN		バッファサイズ
 	*/
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-	template <uint32_t BFN>
-	struct stdout_buffered_chaout {
+	template <int OFN, uint32_t BFN>
+	struct buffered_chaout {
 
 		typedef unsigned int uint;	// 通常 8/16 ビットマイコンでは 16 ビットサイズ
 
@@ -209,7 +220,7 @@ namespace utils {
 			@brief  コンストラクター
 		*/
 		//-----------------------------------------------------------------//
-		stdout_buffered_chaout() noexcept : pos_(0), size_(0) { } 
+		buffered_chaout() noexcept : pos_(0), size_(0) { } 
 
 		void operator() (char ch) noexcept {
 			buff_[pos_] = ch;
@@ -231,11 +242,15 @@ namespace utils {
 			if(pos_ == 0) return;
 
 #ifdef USE_PUTCHAR
-			for(uint i = 0; i < pos_; ++i) {
-				putchar(buff_[i]);
+			if(OFN == STDOUT_FILENO) {
+				for(uint i = 0; i < pos_; ++i) {
+					putchar(buff_[i]);
+				}
+			} else {
+				write(OFN, buff_, pos_);
 			}
 #else
-			write(STDOUT_FILENO, buff_, pos_);
+			write(OFN, buff_, pos_);
 #endif
 			pos_ = 0;
 		}
@@ -401,7 +416,7 @@ namespace utils {
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 	struct base_format {
 
-		static constexpr uint16_t VERSION = 123;		///< バージョン番号（整数）
+		static constexpr uint16_t VERSION = 125;		///< バージョン番号（整数）
 
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 		/*!
@@ -1087,7 +1102,8 @@ namespace utils {
 			num_(0), point_(0),
 			bitlen_(0),
 			error_(error::none),
-			mode_(mode::NONE), zerosupp_(false), sign_(false), nega_(false)
+			mode_(mode::NONE), zerosupp_(false), sign_(false), nega_(false),
+			set_num_(false), set_poi_(false), auto_mode_(false), exp_mode_(false)
 		{
 			if(!chaout_.set(buff, size)) {
 				error_ = error::out_null;
@@ -1338,8 +1354,9 @@ namespace utils {
 
 	template <class CHAOUT> CHAOUT basic_format<CHAOUT>::chaout_;
 
-	typedef basic_format<stdout_buffered_chaout<256> > format;
-	typedef basic_format<stdout_chaout> nformat;
+	typedef basic_format<buffered_chaout<STDOUT_FILENO, 256> > format;
+	typedef basic_format<out_chaout<STDOUT_FILENO> > nformat;	// バッファ無し標準出力
+	typedef basic_format<out_chaout<STDERR_FILENO> > errformat;	// バッファ無し標準出力
 	typedef basic_format<memory_chaout> sformat;
 	typedef basic_format<null_chaout> null_format;
 	typedef basic_format<size_chaout> size_format;
