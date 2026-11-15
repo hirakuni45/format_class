@@ -23,7 +23,7 @@ ifeq ($(OS),Windows_NT)
     FEXT	= .exe
     ICON_RC =
     SYSTEM := WIN
-	CPP_VER := -std=c++17
+	CPP_VER := -std=c++20
     LOCAL_INC_PATH :=
     LOCAL_LIB_PATH :=
 	OPTLIBS =

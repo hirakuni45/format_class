@@ -1,4 +1,4 @@
-format クラス   
+utils::format クラス   
 printf に似た仕様で数値から文字列へ変換する C++ クラス
 =========
 
@@ -17,7 +17,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
  チェックできません。   
  一方、「printf」は優れた柔軟性をもたらし、文字、数値を扱う事をたやすくします。   
    
- boost には、printf の柔軟性と、安全性を考慮した、format.hpp があります。   
+ boost には、printf の柔軟性と、安全性を考慮した、boost/format.hpp があります。   
  
  - 「%」オペレーターのオーバーロード機構を利用して、複数の引数を受け取る事ができます
  - boost::format は優れた実装ですが、iostream に依存していて組み込みマイコンでは問題があります
@@ -42,7 +42,7 @@ printf に似た仕様で数値から文字列へ変換する C++ クラス
    6700      48    2136    8884    22b4 hello.elf
 ```
 
- そこで、boost::format の仕組みをまねて、printf に代わる format クラスを実装しました。   
+ そこで、boost::format の仕組みをまねて、printf に代わる utils::format クラスを実装しました。   
    
 ---
 ## 仕様
@@ -139,9 +139,8 @@ typedef されています。
     auto size = (utils::size_format("%d\n") % a).size();
 ```
 
-- 固定小数点表示   
-組み込みマイコンでは、A/D 変換された整数を正規化して表示したい場合などが多いものです。   
-そこで、固定少数点表示を拡張機能として実装してあります。   
+- 固定小数点表示、組み込みマイコンでは、A/D 変換された整数を正規化して表示したい場合などが多いものです。   
+- そこで、固定少数点表示を拡張機能として実装してあります。   
 - 又、8/16 ビットマイコンなどでは、浮動小数点を扱うと極端にメモリを消費します。   
 - 以下の例では、小数点以下１０ビットの場合。
 - 表示桁（下の例では、小数点以下２桁）以降は四捨五入はされますが、ビット数が足りない場合は切り捨てられた値と同等になります。   
@@ -257,7 +256,7 @@ sys     0m0.015s
 [MIT](LICENSE)
 
 ```
-Copyright (c) 2020, 2025 Hiramatsu Kunihito
+Copyright (c) 2020, 2026 Hiramatsu Kunihito
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

@@ -1,4 +1,4 @@
-format class
+utils::format class
 A C++ class for converting numbers to strings in a printf-like fashion
 =========
 
@@ -39,7 +39,7 @@ Boost has a format.hpp which is flexible and safe for printf.
    6700      48    2136    8884    22b4 hello.elf
 ```
 
-So I implemented the format class instead of printf, in imitation of the boost::format mechanism.
+So I implemented the utils::format class instead of printf, in imitation of the boost::format mechanism.
    
 ---
 ## Specification
@@ -265,7 +265,7 @@ Translated with www.DeepL.com/Translator (free version)
 [MIT](LICENSE)
 
 ```
-Copyright (c) 2020, Hiramatsu Kunihito
+Copyright (c) 2020,2026 Hiramatsu Kunihito
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
